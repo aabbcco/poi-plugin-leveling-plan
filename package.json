@@ -1,0 +1,47 @@
+{
+  "name": "poi-plugin-leveling-plan",
+  "version": "0.0.1",
+  "description": "Leveling plan plugin for poi",
+  "main": "index.es",
+  "scripts": {
+    "prepack": "poi-util-transpile",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postpack": "npm run clean:js",
+    "clean:js": "find ./views -name '*.js' -type f -delete && rm -f ./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": {
+    "name": "",
+    "link": ""
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@blueprintjs/core": "^5.19.1",
+    "fuse.js": "^6.5.3",
+    "classnames": "^2.3.1",
+    "styled-components": "^6.1.19",
+    "react-fontawesome": "^1.7.1"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.6.1",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-config-poi-plugin": "^1.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jsx-a11y": "^6.1.1",
+    "eslint-plugin-react": "^7.11.1",
+    "poi-util-transpile": "^8.2.2"
+  },
+  "poiPlugin": {
+    "title": "Leveling Plan",
+    "description": "plugin_description",
+    "icon": "fa/line-chart",
+    "priority": 50,
+    "apiVer": {
+      "8.0.0": "0.0.1"
+    }
+  }
+}

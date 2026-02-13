@@ -1,0 +1,271 @@
+#leveling-plan {
+  height: 100%;
+  width: 100%;
+}
+
+#leveling-plan .flex-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#leveling-plan .main-nav {
+  margin: 0;
+}
+
+#leveling-plan .list-container {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0 15px;
+  width: calc(100% - 30px);
+  padding: 0;
+}
+
+#leveling-plan .vertical-center {
+  display: flex;
+  align-items: center;
+}
+
+/* Header */
+#leveling-plan .header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Plan List */
+#leveling-plan .plan-list {
+  width: 100%;
+}
+
+#leveling-plan .plan-list-content {
+  margin-top: 10px;
+  padding: 0 5px;
+}
+
+#leveling-plan .empty-message {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 16px;
+}
+
+/* Plan Item */
+#leveling-plan .plan-item {
+  margin-bottom: 15px;
+}
+
+#leveling-plan .plan-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#leveling-plan .plan-item-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#leveling-plan .ship-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+#leveling-plan .level-info {
+  color: #666;
+  font-size: 14px;
+}
+
+#leveling-plan .completed-badge {
+  background-color: #5cb85c;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+#leveling-plan .plan-item-actions {
+  display: flex;
+  gap: 5px;
+}
+
+#leveling-plan .plan-item-body {
+  padding: 10px 0;
+}
+
+#leveling-plan .progress-section {
+  margin-bottom: 15px;
+}
+
+#leveling-plan .progress-label {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+#leveling-plan .exp-info {
+  margin-top: 5px;
+  color: #666;
+  font-size: 13px;
+}
+
+#leveling-plan .maps-section {
+  margin-bottom: 15px;
+}
+
+#leveling-plan .maps-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+#leveling-plan .maps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#leveling-plan .map-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+#leveling-plan .map-name {
+  font-weight: bold;
+  min-width: 50px;
+  color: inherit;
+}
+
+#leveling-plan .map-exp {
+  color: rgba(255, 255, 255, 0.7);
+  min-width: 100px;
+}
+
+#leveling-plan .personal-badge {
+  color: #ffc107;
+  margin-left: 3px;
+}
+
+#leveling-plan .map-sorties {
+  color: #5bc0de;
+  font-weight: bold;
+}
+
+#leveling-plan .notes-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #ddd;
+}
+
+#leveling-plan .notes-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+#leveling-plan .notes-content {
+  color: #666;
+  white-space: pre-wrap;
+}
+
+/* Map Selector */
+#leveling-plan .map-selector {
+  width: 100%;
+}
+
+#leveling-plan .quick-select-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+#leveling-plan .map-quick-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 70px;
+}
+
+#leveling-plan .map-exp-badge {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+#leveling-plan .show-all-toggle {
+  margin-bottom: 15px;
+}
+
+#leveling-plan .map-table-container {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+}
+
+#leveling-plan .selected-maps {
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 3px;
+}
+
+#leveling-plan .selected-maps-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+#leveling-plan .selected-maps-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#leveling-plan .selected-map-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background-color: #337ab7;
+  color: white;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+#leveling-plan .remove-map {
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 1;
+}
+
+#leveling-plan .remove-map:hover {
+  color: #ff4444;
+}
+
+/* Settings */
+#leveling-plan .plan-settings {
+  max-width: 100%;
+  padding: 10px 5px;
+}
+
+#leveling-plan .settings-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.bp5-popover-transition-container{
+  z-index: 11000;
+}
+
+/* Ship Selector Portal - ensure it appears above modals */
+.ship-selector-portal .bp3-popover {
+  z-index: 10 !important;
+}
+
+.ship-selector-portal .bp3-overlay-backdrop {
+  z-index: 9 !important;
+}
