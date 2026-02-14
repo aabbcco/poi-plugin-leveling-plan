@@ -19,7 +19,7 @@ class PlanForm extends Component {
 
     this.state = {
       shipId: editingPlan ? editingPlan.shipId : '',
-      startLevel: editingPlan ? editingPlan.targetLevel : "1",
+      startLevel: editingPlan ? editingPlan.startLevel : "1",
       targetLevel: editingPlan ? editingPlan.targetLevel : '',
       maps: editingPlan ? editingPlan.maps : [],
       notes: editingPlan ? editingPlan.notes : '',
@@ -75,6 +75,7 @@ class PlanForm extends Component {
       // 更新现有计划
       plan = updatePlan(editingPlan, {
         targetLevel: parseInt(targetLevel),
+        startLevel:parseInt(startLevel),
         maps,
         notes,
       })

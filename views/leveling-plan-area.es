@@ -58,6 +58,7 @@ export const LevelingPlanArea = connect(state => ({
       // 更新计划
       updatePlan(editingPlanId, {
         targetLevel: plan.targetLevel,
+        startLevel:plan.startLevel,
         maps: plan.maps,
         notes: plan.notes,
       })

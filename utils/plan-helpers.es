@@ -75,7 +75,7 @@ export const calcPlanDetail = (plan, ship, $ship, personalStats = {}, settings =
   try {
     // 基础信息
     const currentLv = ship.api_lv
-    const startLv = plan.startLv==undefined?ship.api_lv:plan.startLv
+    const startLv = plan.startLevel==undefined?ship.api_lv:plan.startLevel
     const currentExp = ship.api_exp[0] // 累计经验
     const targetLv = plan.targetLevel
 
