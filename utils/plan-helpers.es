@@ -75,6 +75,7 @@ export const calcPlanDetail = (plan, ship, $ship, personalStats = {}, settings =
   try {
     // 基础信息
     const currentLv = ship.api_lv
+    const startLv = plan.startLv==undefined?ship.api_lv:plan.startLv
     const currentExp = ship.api_exp[0] // 累计经验
     const targetLv = plan.targetLevel
 
@@ -83,7 +84,7 @@ export const calcPlanDetail = (plan, ship, $ship, personalStats = {}, settings =
 
     // 计算进度百分比
     const targetTotalExp = expTable[targetLv] || 0
-    const startExp = expTable[currentLv] || 0
+    const startExp = expTable[startLv] || 0
     const progress = targetTotalExp > startExp 
       ? Math.min(100.0, 100.0*((currentExp - startExp) / (targetTotalExp - startExp)))
       : 100.0
@@ -110,6 +111,7 @@ export const calcPlanDetail = (plan, ship, $ship, personalStats = {}, settings =
       shipId: plan.shipId,
       shipMasterId: plan.shipMasterId,
       shipName: $ship.api_name || '',
+      startLv,
       currentLv,
       currentExp,
       targetLv,
@@ -171,13 +173,14 @@ export const formatMapName = (mapId) => {
  * @param {string} notes - 备注
  * @returns {object} 新计划对象
  */
-export const createPlan = (shipId, shipMasterId, targetLevel, maps, notes = '') => {
+export const createPlan = (shipId, shipMasterId,startLevel, targetLevel, maps, notes = '') => {
   const now = Date.now()
   
   return {
     id: generatePlanId(),
     shipId,
     shipMasterId,
+    startLevel,
     targetLevel,
     maps,
     notes,

@@ -14,11 +14,12 @@ const { __ } = window.i18n['poi-plugin-leveling-plan']
 class PlanForm extends Component {
   constructor(props) {
     super(props)
-    
+
     const { editingPlan } = props
-    
+
     this.state = {
       shipId: editingPlan ? editingPlan.shipId : '',
+      startLevel: editingPlan ? editingPlan.targetLevel : "1",
       targetLevel: editingPlan ? editingPlan.targetLevel : '',
       maps: editingPlan ? editingPlan.maps : [],
       notes: editingPlan ? editingPlan.notes : '',
@@ -28,11 +29,19 @@ class PlanForm extends Component {
 
   handleShipChange = (shipId) => {
     this.setState({ shipId })
+    const {ships} = this.props
+    this.setState({startLevel:shipId ? _.find(ships, s => s.api_id === parseInt(shipId)).api_lv : "1"})
   }
 
   handleTargetLevelChange = (e) => {
     const value = e.target.value
     this.setState({ targetLevel: value })
+  }
+
+
+  handleStarttLevelChange = (e) => {
+    const value = e.target.value
+    this.setState({ startLevel: value })
   }
 
   handleMapsChange = (maps) => {
@@ -44,7 +53,7 @@ class PlanForm extends Component {
   }
 
   handleSubmit = () => {
-    const { shipId, targetLevel, maps, notes } = this.state
+    const { shipId, targetLevel,startLevel, maps, notes } = this.state
     const { editingPlan, ships, $ships, onSave } = this.props
 
     // 查找舰娘数据
@@ -74,6 +83,7 @@ class PlanForm extends Component {
       plan = createPlan(
         ship.api_id,
         ship.api_ship_id,
+        parseInt(startLevel),
         parseInt(targetLevel),
         maps,
         notes
@@ -82,6 +92,7 @@ class PlanForm extends Component {
 
     // 验证计划
     const validation = validatePlan(plan, ship)
+    console.log(plan)
     if (!validation.valid) {
       this.setState({ errors: validation.errors })
       return
@@ -93,7 +104,7 @@ class PlanForm extends Component {
 
   render() {
     const { show, onHide, editingPlan, ships } = this.props
-    const { shipId, targetLevel, maps, notes, errors } = this.state
+    const { shipId,startLevel,targetLevel, maps, notes, errors } = this.state
 
     // 获取当前选中的舰娘
     const selectedShip = shipId ? _.find(ships, s => s.api_id === parseInt(shipId)) : null
@@ -124,13 +135,26 @@ class PlanForm extends Component {
             <ShipSelector
               value={shipId}
               onChange={this.handleShipChange}
-              disabled={!!editingPlan}
+              //disabled={!!editingPlan}
             />
             {editingPlan && (
               <p className="help-block">
                 {__('Cannot change ship in existing plan')}
               </p>
             )}
+          </FormGroup>
+
+          {/* 初始等级 */}
+          <FormGroup>
+            <ControlLabel>{__('Start Level')}</ControlLabel>
+            <FormControl
+              type="number"
+              value={startLevel}
+              onChange={this.handleStarttLevelChange}
+              min={currentLevel + 1}
+              max={185}
+              placeholder={__('Enter Start level')}
+            />
           </FormGroup>
 
           {/* 目标等级 */}

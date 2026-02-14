@@ -313,24 +313,24 @@ export const completedPlansSelector = createSelector(
   plans => plans.filter(plan => plan.completed)
 )
 
-// 根据计划ID获取计划详情（带计算数据）
-export const planDetailSelectorFactory = planId => createSelector(
-  [plansSelector, ourShipsSelector, $shipsSelector, personalStatsSelector, planSettingsSelector],
-  (plans, ships, $ships, personalStats, settings) => {
-    const plan = plans[planId]
-    if (!plan) return null
+// // 根据计划ID获取计划详情（带计算数据）
+// export const planDetailSelectorFactory = planId => createSelector(
+//   [plansSelector, ourShipsSelector, $shipsSelector, personalStatsSelector, planSettingsSelector],
+//   (plans, ships, $ships, personalStats, settings) => {
+//     const plan = plans[planId]
+//     if (!plan) return null
     
-    // 查找对应的舰娘实例
-    const ship = _.find(ships, s => s.api_id === plan.shipId)
-    if (!ship) return null
+//     // 查找对应的舰娘实例
+//     const ship = _.find(ships, s => s.api_id === plan.shipId)
+//     if (!ship) return null
     
-    // 查找舰娘图鉴数据
-    const $ship = $ships[plan.shipMasterId]
-    if (!$ship) return null
+//     // 查找舰娘图鉴数据
+//     const $ship = $ships[plan.shipMasterId]
+//     if (!$ship) return null
     
-    return calcPlanDetail(plan, ship, $ship, personalStats, settings)
-  }
-)
+//     return calcPlanDetail(plan, ship, $ship, personalStats, settings)
+//   }
+// )
 
 // 根据舰娘ID查找计划
 export const planByShipIdSelectorFactory = shipId => createSelector(

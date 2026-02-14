@@ -11,6 +11,7 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete }) => {
 
   const {
     shipName,
+    startLv,
     currentLv,
     currentExp,
     targetLv,
@@ -31,7 +32,7 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete }) => {
           <div className="plan-item-title">
             <span className="ship-name">{shipName}</span>
             <span className="level-info">
-              Lv.{currentLv} → Lv.{targetLv}
+              Lv.{startLv==undefined?currentLv:startLv} → Lv.{targetLv}
             </span>
             {completed && (
               <span className="completed-badge">{__(completed ? 'Completed' : '')}</span>
