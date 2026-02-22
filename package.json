@@ -3,10 +3,44 @@
   "version": "0.0.1",
   "description": "Leveling plan plugin for poi",
   "main": "index.js",
+  "keywords": [
+    "poi",
+    "poi-plugin",
+    "leveling",
+    "kancolle"
+  ],
+  "homepage": "https://github.com/aabbcco/poi-plugin-leveling-plan#readme",
+  "bugs": {
+    "url": "https://github.com/aabbcco/poi-plugin-leveling-plan/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aabbcco/poi-plugin-leveling-plan.git"
+  },
+  "author": {
+    "name": "aabbcco",
+    "email": "aabbcco@foxmail.com"
+  },
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "views/**/*.js",
+    "utils/**/*.js",
+    "services/**/*.js",
+    "assets",
+    "i18n",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "prepack": "poi-util-transpile",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "postpack": "npm run clean:js",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Warning: no test specified\"",
     "clean:js": "find ./views -name '*.js' -type f -delete && find ./utils -name '*.js' -type f -delete && find ./services -name '*.js' -type f -delete && rm -f ./index.js",
     "build": "npm run build:transpile && npm run build:dist",
     "build:transpile": "poi-util-transpile",
@@ -16,15 +50,6 @@
     "build:all": "npm run build && npm run build:npm && npm run build:zip",
     "clean": "npm run clean:js && rm -rf dist *.tgz *.zip"
   },
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
-  "author": {
-    "name": "",
-    "link": ""
-  },
-  "license": "MIT",
   "peerDependencies": {
     "@blueprintjs/core": "^5.7.0",
     "classnames": "^2.0.0",
