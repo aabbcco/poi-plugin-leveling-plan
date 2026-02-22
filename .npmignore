@@ -1,1 +1,20 @@
-*.js
+# Source files - only transpiled .js files are needed
+**/*.es
+
+# Development files
+.git
+.gitignore
+.eslintrc.js
+.vscode
+.DS_Store
+
+# Build artifacts
+dist/
+*.tgz
+*.zip
+
+# Development dependencies
+node_modules/
+
+# Development scripts
+scripts/

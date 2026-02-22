@@ -2,12 +2,19 @@
   "name": "poi-plugin-leveling-plan",
   "version": "0.0.1",
   "description": "Leveling plan plugin for poi",
-  "main": "index.es",
+  "main": "index.js",
   "scripts": {
     "prepack": "poi-util-transpile",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postpack": "npm run clean:js",
-    "clean:js": "find ./views -name '*.js' -type f -delete && rm -f ./index.js"
+    "clean:js": "find ./views -name '*.js' -type f -delete && find ./utils -name '*.js' -type f -delete && find ./services -name '*.js' -type f -delete && rm -f ./index.js",
+    "build": "npm run build:transpile && npm run build:dist",
+    "build:transpile": "poi-util-transpile",
+    "build:dist": "node scripts/build.js",
+    "build:npm": "npm pack",
+    "build:zip": "node scripts/create-zip.js",
+    "build:all": "npm run build && npm run build:npm && npm run build:zip",
+    "clean": "npm run clean:js && rm -rf dist *.tgz *.zip"
   },
   "repository": {
     "type": "git",
@@ -18,15 +25,21 @@
     "link": ""
   },
   "license": "MIT",
-  "dependencies": {
-    "@blueprintjs/core": "^5.19.1",
-    "classnames": "^2.3.1",
-    "fuse.js": "^6.5.3",
+  "peerDependencies": {
+    "@blueprintjs/core": "^5.7.0",
+    "classnames": "^2.0.0",
+    "fuse.js": "^6.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "react-fontawesome": "^1.7.1",
-    "redux-observers": "^3.0.0",
-    "styled-components": "^6.1.19"
+    "react-redux": "^8.0.0",
+    "redux": "^4.0.0",
+    "redux-observers": "^2.1.1",
+    "reselect": "^4.0.0",
+    "styled-components": "^6.0.0"
   },
   "devDependencies": {
+    "archiver": "^5.3.1",
     "babel-eslint": "^10.0.1",
     "eslint": "^5.6.1",
     "eslint-config-airbnb": "^17.1.0",
@@ -34,6 +47,7 @@
     "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-jsx-a11y": "^6.1.1",
     "eslint-plugin-react": "^7.11.1",
+    "fs-extra": "^10.1.0",
     "poi-util-transpile": "^8.2.2"
   },
   "poiPlugin": {
