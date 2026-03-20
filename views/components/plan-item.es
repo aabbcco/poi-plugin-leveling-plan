@@ -1,15 +1,67 @@
 import React from 'react'
 import { Panel, Button, ProgressBar } from 'react-bootstrap'
-import { connect } from 'react-redux'
-import { createSelector } from 'reselect'
+import { MaterialIcon, SlotitemIcon } from 'views/components/etc/icon'
+import { UseitemIcon } from './useitem-icon'
+import { getShipRemodelCost, calcAllShortages } from '../../utils/kaisou-cost'
+import _ from 'lodash'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
+const { __: __r } = window.i18n.resources
+
+const RemodelCostDisplay = ({ cost, resources, useitems, $useitems }) => {
+  if (!cost || (cost.ammo === 0 && cost.steel === 0 && Object.keys(cost.consumable).length === 0)) {
+    return <span style={{ opacity: 0.5 }}>{__('No remodel required')}</span>
+  }
+
+  const shortages = calcAllShortages(cost, resources, useitems || {}, {})
+
+  return (
+    <span style={{ textAlign: 'right', fontSize: '0.9em' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+        {cost.ammo > 0 && (
+          <span>
+            <MaterialIcon materialId={2} className="material-icon-sm" />
+            {cost.ammo.toLocaleString()}
+            {shortages.ammo?.gap > 0 && (
+              <span style={{ color: '#d9534f' }}>(-{shortages.ammo.gap.toLocaleString()})</span>
+            )}
+          </span>
+        )}
+        {cost.steel > 0 && (
+          <span>
+            <MaterialIcon materialId={3} className="material-icon-sm" />
+            {cost.steel.toLocaleString()}
+            {shortages.steel?.gap > 0 && (
+              <span style={{ color: '#d9534f' }}>(-{shortages.steel.gap.toLocaleString()})</span>
+            )}
+          </span>
+        )}
+        {Object.keys(cost.consumable || {}).length > 0 && (
+          Object.entries(cost.consumable).map(([itemId, count]) => {
+            const shortage = _.get(shortages, ['consumable', itemId, 'gap'], 0)
+            const itemName = __r(_.get($useitems, [itemId, 'api_name'], `Item ${itemId}`))
+            return (
+              <span key={itemId} style={{ fontSize: '0.85em', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                <UseitemIcon useitemId={Number(itemId)} className="useitem-icon-sm" />
+                {count}
+                {shortage > 0 && (
+                  <span style={{ color: '#d9534f' }}>(-{shortage})</span>
+                )}
+              </span>
+            )
+          })
+        )}
+      </span>
+    </span>
+  )
+}
 
 // 单个计划卡片组件
-export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete }) => {
+export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, resources, useitems, $useitems }) => {
   if (!planDetail) return null
 
   const {
+    shipMasterId,
     shipName,
     startLv,
     currentLv,
@@ -23,7 +75,11 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete }) => {
     completed,
   } = planDetail
 
-  console.log(planDetail)
+  const fromLevel = startLv === undefined ? currentLv : startLv
+
+  const remodelCost = ($ships && shipMasterId && fromLevel && targetLv)
+    ? getShipRemodelCost(shipMasterId, fromLevel, targetLv, $ships)
+    : null
 
   return (
     <Panel className="plan-item">
@@ -68,6 +124,11 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete }) => {
             </div>
             <div className="exp-info">
               {__('Required EXP')}: {requiredExp.toLocaleString()}
+              {remodelCost && (
+                <span style={{ marginLeft: 15 }}>
+                  <RemodelCostDisplay cost={remodelCost} resources={resources} useitems={useitems} $useitems={$useitems} />
+                </span>
+              )}
             </div>
           </div>
 

@@ -269,3 +269,9 @@
 .ship-selector-portal .bp3-overlay-backdrop {
   z-index: 9 !important;
 }
+
+/* Useitem Icon */
+#leveling-plan .useitem-icon {
+  width: 18px;
+  height: 18px;
+}

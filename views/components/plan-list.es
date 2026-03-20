@@ -1,9 +1,10 @@
 import React, { Component } from 'react'
 import { Nav, NavItem } from 'react-bootstrap'
 import { connect } from 'react-redux'
-import { createSelector } from 'reselect'
+import _ from 'lodash'
 import PlanItem from './plan-item'
-import { allPlanDetailsSelector, activePlanDetailsSelector, completedPlanDetailsSelector } from '../../utils/selectors'
+import { constSelector } from 'views/utils/selectors'
+import { allPlanDetailsSelector, activePlanDetailsSelector, completedPlanDetailsSelector, $shipsSelector } from '../../utils/selectors'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
 
@@ -22,7 +23,7 @@ class PlanList extends Component {
 
   render() {
     const { activeTab } = this.state
-    const { allPlans, activePlans, completedPlans, onEdit, onDelete, onComplete } = this.props
+    const { allPlans, activePlans, completedPlans, onEdit, onDelete, onComplete, $ships, resources, useitems, $useitems } = this.props
 
     // 根据当前标签页选择要显示的计划
     let displayPlans = []
@@ -63,6 +64,10 @@ class PlanList extends Component {
                 onEdit={() => onEdit(plan.id)}
                 onDelete={() => onDelete(plan.id)}
                 onComplete={() => onComplete(plan.id)}
+                $ships={$ships}
+                resources={resources}
+                useitems={useitems}
+                $useitems={$useitems}
               />
             ))
           )}
@@ -72,14 +77,18 @@ class PlanList extends Component {
   }
 }
 
-// Redux 连接
-const mapStateToProps = createSelector(
-  [allPlanDetailsSelector, activePlanDetailsSelector, completedPlanDetailsSelector],
-  (allPlans, activePlans, completedPlans) => ({
-    allPlans,
-    activePlans,
-    completedPlans,
-  })
-)
+// Redux 连接（不处理equips，避免大量计算）
+const mapStateToProps = (state) => {
+  const $const = constSelector(state) || {}
+  return {
+    allPlans: allPlanDetailsSelector(state),
+    activePlans: activePlanDetailsSelector(state),
+    completedPlans: completedPlanDetailsSelector(state),
+    $ships: $shipsSelector(state),
+    resources: _.get(state, 'info.resources', []),
+    useitems: _.get(state, 'info.useitems', {}),
+    $useitems: _.get($const, '$useitems', {}),
+  }
+}
 
 export default connect(mapStateToProps)(PlanList)
