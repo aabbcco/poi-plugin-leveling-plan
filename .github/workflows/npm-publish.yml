@@ -26,6 +26,7 @@ jobs:
       id-token: write
       contents: read
       attestations: write
+      packages: read
 
     steps:
       - uses: actions/checkout@v4
