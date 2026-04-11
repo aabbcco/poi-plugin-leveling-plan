@@ -2,10 +2,62 @@ import React, { Component } from 'react'
 import { Panel, FormGroup, ControlLabel, FormControl, Button } from 'react-bootstrap'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
-import { planSettingsSelector } from '../../utils/selectors'
-import { expLevel } from '../../utils/constants'
+import { planSettingsSelector, personalStatsSelector } from '../../utils/selectors'
+import { expLevel, EXP_BY_POI_DB } from '../../utils/constants'
+import { getMapExp } from '../../utils/exp-calculator'
+import { formatMapName } from '../../utils/plan-helpers'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
+
+const MapExperienceOverview = ({ personalStats }) => {
+  const mapIds = Object.keys(EXP_BY_POI_DB).sort((a, b) => Number(a) - Number(b))
+
+  return (
+    <div className="map-exp-table-container">
+      <table className="map-exp-table">
+        <thead>
+          <tr>
+            <th>{__('Map')}</th>
+            <th>{__('Preset Value')}</th>
+            <th>{__('Personal Value')}</th>
+            <th>{__('Sample Count')}</th>
+            <th>{__('Currently Used')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mapIds.map(mapId => {
+            const mapExpData = getMapExp(mapId, personalStats, 30)
+            const presetExp = EXP_BY_POI_DB[mapId] || 0
+            const isPersonal = mapExpData.source === 'personal'
+            const hasPersonalData = mapExpData.count > 0
+            const samplesInsufficient = hasPersonalData && !isPersonal
+
+            return (
+              <tr key={mapId}>
+                <td className="map-id">{formatMapName(mapId)}</td>
+                <td className="preset-exp">{presetExp}</td>
+                <td className={`personal-exp ${isPersonal ? 'active' : ''}`}>
+                  {hasPersonalData ? mapExpData.exp : __('No personal data')}
+                </td>
+                <td className={`sample-count ${samplesInsufficient ? 'insufficient' : ''}`}>
+                  {mapExpData.count}
+                  {samplesInsufficient && <span className="insufficient-note"> ({__('Samples Insufficient')})</span>}
+                </td>
+                <td className="current-source">
+                  {isPersonal ? (
+                    <span className="source-badge personal">{__('Personal')} ★</span>
+                  ) : (
+                    <span className="source-badge preset">{__('Preset')}</span>
+                  )}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
 // 计划设置组件
 class PlanSettings extends Component {
@@ -54,8 +106,10 @@ class PlanSettings extends Component {
 
   render() {
     const { defaultRank, defaultIsFlagship, defaultIsMVP } = this.state
+    const { personalStats } = this.props
 
     return (
+      <>
       <Panel className="plan-settings">
         <Panel.Heading>
           <Panel.Title>{__('Default Battle Conditions')}</Panel.Title>
@@ -120,15 +174,27 @@ class PlanSettings extends Component {
           </div>
         </Panel.Body>
       </Panel>
+
+      {/* 海图经验纵览 - 独立卡片 */}
+      <Panel className="map-exp-overview-panel">
+        <Panel.Heading>
+          <Panel.Title>{__('Map Experience Overview')}</Panel.Title>
+        </Panel.Heading>
+        <Panel.Body>
+          <MapExperienceOverview personalStats={personalStats} />
+        </Panel.Body>
+      </Panel>
+      </>
     )
   }
 }
 
 // Redux 连接
 const mapStateToProps = createSelector(
-  [planSettingsSelector],
-  (settings) => ({
+  [planSettingsSelector, personalStatsSelector],
+  (settings, personalStats) => ({
     settings,
+    personalStats,
   })
 )
 

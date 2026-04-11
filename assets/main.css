@@ -174,7 +174,160 @@
 
 /* Map Selector */
 #leveling-plan .map-selector {
-  width: 100%;
+  display: inline-block;
+  position: relative;
+}
+
+#leveling-plan .map-selector-dropdown {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#leveling-plan .map-selector-list {
+  padding: 5px;
+}
+
+#leveling-plan .map-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+#leveling-plan .map-selector-item:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+#leveling-plan .map-selector-item.selected {
+  background-color: rgba(51, 122, 183, 0.1);
+}
+
+#leveling-plan .map-selector-check {
+  width: 20px;
+}
+
+#leveling-plan .map-selector-name {
+  flex: 1;
+}
+
+#leveling-plan .map-selector-exp {
+  color: #888;
+  font-size: 12px;
+}
+
+#leveling-plan .quick-select-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.bp5-dark #leveling-plan .map-selector-dropdown {
+  background: #303030;
+}
+
+.bp5-dark #leveling-plan .map-selector-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bp5-dark #leveling-plan .map-selector-item.selected {
+  background-color: rgba(79, 172, 254, 0.2);
+}
+
+.bp5-dark #leveling-plan .map-selector-exp {
+  color: #999;
+}
+
+#leveling-plan .map-selector .bp5-popover {
+  position: absolute;
+  contain: layout;
+  z-index: 1000;
+}
+
+#leveling-plan .map-selector .bp5-popover-content,
+#leveling-plan .map-selector .bp5-menu {
+  max-height: 300px;
+  overflow-y: auto;
+  position: relative;
+}
+
+#leveling-plan .map-select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#leveling-plan .map-select-check {
+  width: 20px;
+}
+
+#leveling-plan .map-select-name {
+  flex: 1;
+}
+
+#leveling-plan .map-select-exp {
+  color: #888;
+  font-size: 12px;
+}
+
+#leveling-plan .quick-select-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+#leveling-plan .map-selector .bp5-menu {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#leveling-plan .map-selector-tabs {
+  display: flex;
+  flex-direction: column;
+  min-width: 280px;
+}
+
+#leveling-plan .map-selector-tab-panel {
+  max-height: 250px;
+  overflow-y: auto;
+  width: 200px;
+  list-style: none;
+}
+
+#leveling-plan .map-selector-tab-panel ul,
+#leveling-plan .map-selector-tab-panel li {
+  list-style: none;
+  padding-left: 0;
+}
+
+#leveling-plan .map-selector-popover .bp5-menu-item::before {
+  display: none;
+}
+
+#leveling-plan .map-select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#leveling-plan .map-select-check {
+  width: 20px;
+}
+
+#leveling-plan .map-select-name {
+  flex: 1;
+}
+
+#leveling-plan .map-select-exp {
+  color: #888;
+  font-size: 12px;
+}
+
+.bp5-dark #leveling-plan .map-select-exp {
+  color: #999;
 }
 
 #leveling-plan .quick-select-buttons {
@@ -257,8 +410,113 @@
   margin-top: 20px;
 }
 
+/* Map Experience Overview */
+#leveling-plan .map-exp-overview {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+#leveling-plan .map-exp-table-container {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+
+#leveling-plan .map-exp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#leveling-plan .map-exp-table th,
+#leveling-plan .map-exp-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+#leveling-plan .map-exp-table th {
+  background-color: #fff;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.bp5-dark #leveling-plan .map-exp-table th {
+  background-color: #303030;
+}
+
+#leveling-plan .map-exp-table tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+#leveling-plan .map-exp-table tr:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+#leveling-plan .map-id {
+  font-weight: bold;
+  min-width: 50px;
+}
+
+#leveling-plan .preset-exp {
+  color: #666;
+}
+
+#leveling-plan .personal-exp {
+  color: #999;
+}
+
+#leveling-plan .personal-exp.active {
+  color: #ffc107;
+  font-weight: bold;
+}
+
+#leveling-plan .sample-count {
+  color: #666;
+}
+
+#leveling-plan .sample-count.insufficient {
+  color: #d9534f;
+}
+
+#leveling-plan .insufficient-note {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+#leveling-plan .source-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+#leveling-plan .source-badge.personal {
+  background-color: #ffc107;
+  color: #000;
+}
+
+#leveling-plan .source-badge.preset {
+  background-color: #5bc0de;
+  color: #fff;
+}
+
 .bp5-popover-transition-container{
   z-index: 11000;
+}
+
+#leveling-plan .map-selector-popover .bp5-menu {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#leveling-plan .map-selector-popover.bp5-overlay {
+  position: absolute;
+  height: 0;
+  overflow: visible;
 }
 
 /* Ship Selector Portal - ensure it appears above modals */

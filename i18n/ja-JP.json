@@ -45,5 +45,12 @@
   "MVP": "MVP",
   "Reset to Default": "デフォルトに戻す",
   "Save Settings": "設定を保存",
-  "Are you sure you want to delete this plan?": "この計画を削除してもよろしいですか？"
+  "Are you sure you want to delete this plan?": "この計画を削除してもよろしいですか？",
+  "Map Experience Overview": "海域経験値一覧",
+  "Preset Value": "プリセット値",
+  "Personal Value": "個人値",
+  "Sample Count": "サンプル数",
+  "Currently Used": "現在使用中",
+  "Samples Insufficient": "サンプル不足",
+  "No personal data": "個人データなし"
 }

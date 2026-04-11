@@ -11,7 +11,7 @@ export const windowOptions = {
   height: 650,
 }
 
-// Initialize auto-complete observer when plugin loads
+// Initialize observers when plugin loads
 // Import and initialize in next tick to ensure POI is ready
 if (typeof setImmediate === 'function') {
   setImmediate(() => {
@@ -21,6 +21,12 @@ if (typeof setImmediate === 'function') {
     } catch (error) {
       console.error('[LevelingPlan] Failed to load auto-complete observer:', error)
     }
+    try {
+      const { initBattleObserver } = require('./services/battle-observer')
+      initBattleObserver()
+    } catch (error) {
+      console.error('[LevelingPlan] Failed to load battle observer:', error)
+    }
   })
 } else {
   setTimeout(() => {
@@ -29,6 +35,12 @@ if (typeof setImmediate === 'function') {
       initAutoCompleteObserver()
     } catch (error) {
       console.error('[LevelingPlan] Failed to load auto-complete observer:', error)
+    }
+    try {
+      const { initBattleObserver } = require('./services/battle-observer')
+      initBattleObserver()
+    } catch (error) {
+      console.error('[LevelingPlan] Failed to load battle observer:', error)
     }
   }, 0)
 }

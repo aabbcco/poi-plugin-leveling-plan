@@ -8,6 +8,9 @@ import _ from 'lodash'
 
 const fallback = resolve(__dirname, '../../assets/icon/useitem.svg')
 
+// 有图标文件的 useitem id 集合（75/77/78/94 命名正确，其余 fallback）
+const AVAILABLE_ICONS = new Set([75, 77, 78, 94])
+
 class StaticUseitemIcon extends Component {
   static propTypes = {
     useitemId: PropTypes.number.isRequired,
@@ -31,7 +34,9 @@ class StaticUseitemIcon extends Component {
     let _src = fallback
 
     try {
-      _src = resolve(__dirname, `../../assets/icon/${useitemId}.png`)
+      if (AVAILABLE_ICONS.has(useitemId)) {
+        _src = resolve(__dirname, `../../assets/icon/${useitemId}.png`)
+      }
     } catch (e) {
       _src = fallback
     }

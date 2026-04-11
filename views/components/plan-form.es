@@ -7,6 +7,7 @@ import ShipSelector from './ship-selector'
 import MapSelector from './map-selector'
 import { ourShipsSelector, $shipsSelector, plansSelector } from '../../utils/selectors'
 import { createPlan, updatePlan, validatePlan } from '../../utils/plan-helpers'
+import { getRemodelLevelsForShip } from '../../utils/kaisou-cost'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
 
@@ -169,6 +170,33 @@ class PlanForm extends Component {
               max={185}
               placeholder={__('Enter target level')}
             />
+            {selectedShip && $ships && (() => {
+              const shipMasterId = selectedShip.api_ship_id
+              const remodelLevels = getRemodelLevelsForShip(shipMasterId, $ships)
+              const startLv = parseInt(startLevel) || 0
+              const filteredLevels = remodelLevels.filter(lv => lv > startLv)
+              if (filteredLevels.length === 0) return null
+              return (
+                <div className="remodel-level-tags" style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {filteredLevels.map(lv => (
+                    <span
+                      key={lv}
+                      onClick={() => this.setState({ targetLevel: String(lv) })}
+                      style={{
+                        cursor: 'pointer',
+                        padding: '2px 8px',
+                        backgroundColor: parseInt(targetLevel) === lv ? '#337ab7' : '#f0f0f0',
+                        color: parseInt(targetLevel) === lv ? 'white' : '#333',
+                        borderRadius: 3,
+                        fontSize: 12,
+                      }}
+                    >
+                      lv{lv}
+                    </span>
+                  ))}
+                </div>
+              )
+            })()}
             {selectedShip && (
               <p className="help-block">
                 {__('Current level')}: {currentLevel}

@@ -39,10 +39,16 @@ const RemodelCostDisplay = ({ cost, resources, useitems, $useitems }) => {
         {Object.keys(cost.consumable || {}).length > 0 && (
           Object.entries(cost.consumable).map(([itemId, count]) => {
             const shortage = _.get(shortages, ['consumable', itemId, 'gap'], 0)
-            const itemName = __r(_.get($useitems, [itemId, 'api_name'], `Item ${itemId}`))
+            const numId = Number(itemId)
+            // 建造资材(2) materialId=4，开发资材(3) materialId=6
+            const isMaterial = numId === 2 || numId === 3
+            const materialId = numId === 2 ? 4 : 6
             return (
               <span key={itemId} style={{ fontSize: '0.85em', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                <UseitemIcon useitemId={Number(itemId)} className="useitem-icon-sm" />
+                {isMaterial
+                  ? <MaterialIcon materialId={materialId} className="material-icon-sm" />
+                  : <UseitemIcon useitemId={numId} className="useitem-icon-sm" />
+                }
                 {count}
                 {shortage > 0 && (
                   <span style={{ color: '#d9534f' }}>(-{shortage})</span>
