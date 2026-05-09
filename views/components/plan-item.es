@@ -1,5 +1,6 @@
 import React from 'react'
 import { Panel, Button, ProgressBar } from 'react-bootstrap'
+import { Tag } from '@blueprintjs/core'
 import { MaterialIcon, SlotitemIcon } from 'views/components/etc/icon'
 import { UseitemIcon } from './useitem-icon'
 import { getShipRemodelCost, calcAllShortages } from '../../utils/kaisou-cost'
@@ -169,6 +170,115 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
             </div>
           )}
         </div>
+      </Panel.Body>
+    </Panel>
+  )
+}
+
+const FARMING_COL_STYLE = {
+  lv: { width: 40, textAlign: 'right', paddingRight: 8, flexShrink: 0 },
+  progress: { flex: 1, minWidth: 80, paddingRight: 8 },
+  pct: { width: 56, textAlign: 'right', paddingRight: 12, flexShrink: 0, fontSize: '0.85em' },
+  exp: { width: 64, textAlign: 'right', paddingRight: 12, flexShrink: 0, fontSize: '0.85em' },
+  maps: { width: 200, flexShrink: 0 },
+}
+
+const FarmingInstanceRow = ({ inst }) => (
+  <div className="farming-instance-row" style={{
+    display: 'flex',
+    alignItems: 'center',
+    padding: '4px 0',
+    fontSize: '0.9em',
+  }}>
+    <span style={FARMING_COL_STYLE.lv}>Lv.{inst.currentLv}</span>
+    <div style={FARMING_COL_STYLE.progress}>
+      <ProgressBar now={inst.progress} style={{ marginBottom: 0, height: 12 }} />
+    </div>
+    <span style={FARMING_COL_STYLE.pct}>{inst.progress.toFixed(1)}%</span>
+    <span style={FARMING_COL_STYLE.exp}>{inst.requiredExp.toLocaleString()}</span>
+    <div style={FARMING_COL_STYLE.maps}>
+      {(inst.mapDetails || []).map(map => (
+        <Tag key={map.mapId} minimal style={{ marginRight: 4, marginBottom: 2 }}>
+          {map.mapName} ×{map.sortiesNeeded.toLocaleString()}
+        </Tag>
+      ))}
+    </div>
+  </div>
+)
+
+const FarmingHeaderRow = () => (
+  <div className="farming-instance-row farming-header-row" style={{
+    display: 'flex',
+    alignItems: 'center',
+    padding: '2px 0 6px',
+    fontSize: '0.8em',
+    opacity: 0.55,
+    borderBottom: '1px solid rgba(128,128,128,0.2)',
+    marginBottom: 2,
+  }}>
+    <span style={FARMING_COL_STYLE.lv}>Lv</span>
+    <div style={FARMING_COL_STYLE.progress}></div>
+    <span style={FARMING_COL_STYLE.pct}>%</span>
+    <span style={FARMING_COL_STYLE.exp}>{__('EXP')}</span>
+    <div style={FARMING_COL_STYLE.maps}>{__('Maps')}</div>
+  </div>
+)
+
+const FarmingDivider = () => (
+  <div className="farming-divider" />
+)
+
+// 养殖计划卡片组件
+export const FarmingPlanItem = ({ planDetail, onEdit, onDelete }) => {
+  if (!planDetail || planDetail.type !== 'farming') return null
+
+  const {
+    shipName,
+    targetLv,
+    instances,
+    totalInstancesBelowTarget,
+    notes,
+  } = planDetail
+
+  return (
+    <Panel className="plan-item farming-plan-item">
+      <Panel.Heading>
+        <div className="plan-item-header">
+          <div className="plan-item-title">
+            <span className="ship-name">{shipName}</span>
+            <span className="level-info"> → Lv.{targetLv}</span>
+            <span style={{ marginLeft: 12, fontSize: '0.9em', opacity: 0.7 }}>
+              {__('Below target')}: {totalInstancesBelowTarget} {__('ships')}
+            </span>
+          </div>
+          <div className="plan-item-actions">
+            <Button bsSize="xsmall" onClick={onEdit}>{__('Edit')}</Button>
+            <Button bsSize="xsmall" bsStyle="danger" onClick={onDelete}>{__('Delete')}</Button>
+          </div>
+        </div>
+      </Panel.Heading>
+      <Panel.Body>
+        {instances.length === 0 ? (
+          <div className="empty-message" style={{ fontStyle: 'italic', opacity: 0.7 }}>
+            {__('All ships have reached the target level')}
+          </div>
+        ) : (
+          <>
+            <FarmingHeaderRow />
+            {instances.map((inst, i) => (
+              <React.Fragment key={inst.shipId}>
+                {i > 0 && <FarmingDivider />}
+                <FarmingInstanceRow inst={inst} />
+              </React.Fragment>
+            ))}
+          </>
+        )}
+        {notes && (
+          <div className="notes-section" style={{ marginTop: 8, fontSize: '0.9em' }}>
+            <span style={{ opacity: 0.6 }}>{__('Notes')}: </span>
+            {notes}
+          </div>
+        )}
       </Panel.Body>
     </Panel>
   )

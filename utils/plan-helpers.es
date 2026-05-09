@@ -17,8 +17,9 @@ export const generatePlanId = () => {
  */
 export const validatePlan = (plan, ship = null) => {
   const errors = []
+  const isFarming = plan.type === 'farming'
 
-  if (!plan.shipId) {
+  if (!isFarming && !plan.shipId) {
     errors.push('shipId is required')
   }
 
@@ -30,7 +31,7 @@ export const validatePlan = (plan, ship = null) => {
     errors.push('targetLevel must be between 1 and 185')
   }
 
-  if (ship && plan.targetLevel <= ship.api_lv) {
+  if (!isFarming && ship && plan.targetLevel <= ship.api_lv) {
     errors.push('targetLevel must be greater than current level')
   }
 
@@ -150,17 +151,11 @@ export const shouldAutoComplete = (plan, ship) => {
  */
 export const formatMapName = (mapId) => {
   if (!mapId || typeof mapId !== 'string') return ''
-  
-  // '53' -> '5-3'
+
   if (mapId.length === 2) {
     return `${mapId[0]}-${mapId[1]}`
   }
-  
-  // '11' -> '1-1'
-  if (mapId.length === 2) {
-    return `${mapId[0]}-${mapId[1]}`
-  }
-  
+
   return mapId
 }
 
@@ -173,21 +168,30 @@ export const formatMapName = (mapId) => {
  * @param {string} notes - 备注
  * @returns {object} 新计划对象
  */
-export const createPlan = (shipId, shipMasterId,startLevel, targetLevel, maps, notes = '') => {
+export const createPlan = (shipId, shipMasterId, startLevel, targetLevel, maps, notes = '', type = 'normal') => {
   const now = Date.now()
   
-  return {
+  const base = {
     id: generatePlanId(),
-    shipId,
     shipMasterId,
-    startLevel,
     targetLevel,
     maps,
     notes,
-    completed: false,
-    completedAt: null,
+    type,
     createdAt: now,
     updatedAt: now,
+  }
+
+  if (type === 'farming') {
+    return base
+  }
+
+  return {
+    ...base,
+    shipId,
+    startLevel,
+    completed: false,
+    completedAt: null,
   }
 }
 

@@ -52,5 +52,13 @@
   "Sample Count": "Sample Count",
   "Currently Used": "Currently Used",
   "Samples Insufficient": "Samples Insufficient",
-  "No personal data": "No personal data"
+  "No personal data": "No personal data",
+  "Farming": "Farming",
+  "Add Farming Plan": "Add Farming Plan",
+  "Edit Farming Plan": "Edit Farming Plan",
+  "Ship Type": "Ship Type",
+  "No farming plans yet": "No farming plans yet",
+  "Below target": "Below target",
+  "ships": "ships",
+  "All ships have reached the target level": "All ships have reached the target level"
 }

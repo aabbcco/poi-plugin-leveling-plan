@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 import { Nav, NavItem, Col, Grid, Button } from 'react-bootstrap'
 import { join } from 'path-extra'
 import PlanList from './components/plan-list'
+import FarmingPlanList from './components/farming-plan-list'
 import PlanForm from './components/plan-form'
 import PlanSettings from './components/plan-settings'
 import { plansSelector } from '../utils/selectors'
@@ -19,9 +20,10 @@ export const LevelingPlanArea = connect(state => ({
   }
 
   state = {
-    activeTab: 0, // 0: Plans, 1: Settings
+    activeTab: 0, // 0: Plans, 1: Farming, 2: Settings
     showPlanForm: false,
     editingPlanId: null,
+    planType: 'normal',
   }
 
   handleTabChange = key => {
@@ -34,13 +36,25 @@ export const LevelingPlanArea = connect(state => ({
     this.setState({
       showPlanForm: true,
       editingPlanId: null,
+      planType: 'normal',
+    })
+  }
+
+  handleAddFarmingPlan = () => {
+    this.setState({
+      showPlanForm: true,
+      editingPlanId: null,
+      planType: 'farming',
     })
   }
 
   handleEditPlan = (planId) => {
+    const { plans } = this.props
+    const plan = plans[planId]
     this.setState({
       showPlanForm: true,
       editingPlanId: planId,
+      planType: plan ? (plan.type || 'normal') : 'normal',
     })
   }
 
@@ -48,6 +62,7 @@ export const LevelingPlanArea = connect(state => ({
     this.setState({
       showPlanForm: false,
       editingPlanId: null,
+      planType: 'normal',
     })
   }
 
@@ -55,15 +70,13 @@ export const LevelingPlanArea = connect(state => ({
     const { editingPlanId } = this.state
 
     if (editingPlanId) {
-      // 更新计划
       updatePlan(editingPlanId, {
         targetLevel: plan.targetLevel,
-        startLevel:plan.startLevel,
+        startLevel: plan.startLevel,
         maps: plan.maps,
         notes: plan.notes,
       })
     } else {
-      // 添加计划
       addPlan(plan)
     }
 
@@ -90,7 +103,7 @@ export const LevelingPlanArea = connect(state => ({
   }
 
   render() {
-    const { activeTab, showPlanForm, editingPlanId } = this.state
+    const { activeTab, showPlanForm, editingPlanId, planType } = this.state
     const { plans } = this.props
 
     const editingPlan = editingPlanId ? plans[editingPlanId] : null
@@ -100,24 +113,28 @@ export const LevelingPlanArea = connect(state => ({
         <div className="flex-column">
           <link rel="stylesheet" href={join(__dirname, '..', 'assets', 'main.css')} />
           
-          {/* 顶部导航 */}
           <Grid className="vertical-center" style={{ minHeight: 45 }}>
             <Col xs={12} style={{ padding: 0 }}>
               <div className="header-container">
                 <Nav className="main-nav" bsStyle="pills" activeKey={activeTab} onSelect={this.handleTabChange}>
                   <NavItem eventKey={0}>{__('Plans')}</NavItem>
-                  <NavItem eventKey={1}>{__('Settings')}</NavItem>
+                  <NavItem eventKey={1}>{__('Farming')}</NavItem>
+                  <NavItem eventKey={2}>{__('Settings')}</NavItem>
                 </Nav>
                 {activeTab === 0 && (
                   <Button bsStyle="primary" onClick={this.handleAddPlan}>
                     {__('Add Plan')}
                   </Button>
                 )}
+                {activeTab === 1 && (
+                  <Button bsStyle="primary" onClick={this.handleAddFarmingPlan}>
+                    {__('Add Farming Plan')}
+                  </Button>
+                )}
               </div>
             </Col>
           </Grid>
 
-          {/* 内容区域 */}
           <div className="list-container">
             {activeTab === 0 && (
               <PlanList
@@ -127,19 +144,25 @@ export const LevelingPlanArea = connect(state => ({
               />
             )}
             {activeTab === 1 && (
+              <FarmingPlanList
+                onEdit={this.handleEditPlan}
+                onDelete={this.handleDeletePlan}
+              />
+            )}
+            {activeTab === 2 && (
               <PlanSettings
                 onSave={this.handleSaveSettings}
               />
             )}
           </div>
 
-          {/* 计划表单模态框 */}
           <PlanForm
             key={editingPlanId || 'new'}
             show={showPlanForm}
             onHide={this.handleClosePlanForm}
             onSave={this.handleSavePlan}
             editingPlan={editingPlan}
+            planType={planType}
           />
         </div>
       </div>

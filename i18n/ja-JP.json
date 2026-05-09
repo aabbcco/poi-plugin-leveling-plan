@@ -52,5 +52,13 @@
   "Sample Count": "サンプル数",
   "Currently Used": "現在使用中",
   "Samples Insufficient": "サンプル不足",
-  "No personal data": "個人データなし"
+  "No personal data": "個人データなし",
+  "Farming": "養殖",
+  "Add Farming Plan": "養殖計画を追加",
+  "Edit Farming Plan": "養殖計画を編集",
+  "Ship Type": "艦種",
+  "No farming plans yet": "養殖計画がありません",
+  "Below target": "未達成",
+  "ships": "隻",
+  "All ships have reached the target level": "全隻目標レベル達成"
 }

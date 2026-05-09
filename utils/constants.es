@@ -228,6 +228,17 @@ export const EXP_BY_POI_DB = {
   72: 213,
 }
 
+// 世界名称映射
+export const WORLD_NAMES = {
+  1: '鎮守府海域',
+  2: '南西諸島海域',
+  3: '北方海域',
+  4: '西方海域',
+  5: '南方海域',
+  6: '中部海域',
+  7: '南西海域',
+}
+
 // 常用练级海图
 export const frequentMaps = [15, 21, 22, 42, 52, 53, 71]
 

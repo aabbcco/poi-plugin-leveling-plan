@@ -7,8 +7,8 @@ import {
   shipDataSelectorFactory,
 } from 'views/utils/selectors'
 import { exp, MAX_LEVEL, EXP_BY_POI_DB } from './constants'
-import { getMapExp, getMapExpBatch } from './exp-calculator'
-import { calcPlanDetail } from './plan-helpers'
+import { getMapExp, getMapExpBatch, calcBattleExp, calcSortiesNeeded } from './exp-calculator'
+import { calcPlanDetail, formatMapName } from './plan-helpers'
 import { KEY_PLANS, KEY_SETTINGS, KEY_STATS } from './config-helper'
 
 // ============ 1. 基础数据 Selectors ============
@@ -301,15 +301,21 @@ export const plansArraySelector = createSelector(
     .value()
 )
 
+// 所有正常计划（非养殖）
+export const normalPlansArraySelector = createSelector(
+  [plansArraySelector],
+  plans => plans.filter(plan => plan.type !== 'farming')
+)
+
 // 未完成的计划
 export const activePlansSelector = createSelector(
-  [plansArraySelector],
+  [normalPlansArraySelector],
   plans => plans.filter(plan => !plan.completed)
 )
 
 // 已完成的计划
 export const completedPlansSelector = createSelector(
-  [plansArraySelector],
+  [normalPlansArraySelector],
   plans => plans.filter(plan => plan.completed)
 )
 
@@ -340,7 +346,7 @@ export const planByShipIdSelectorFactory = shipId => createSelector(
 
 // 所有计划的详情（数组）
 export const allPlanDetailsSelector = createSelector(
-  [plansArraySelector, ourShipsSelector, $shipsSelector, personalStatsSelector, planSettingsSelector],
+  [normalPlansArraySelector, ourShipsSelector, $shipsSelector, personalStatsSelector, planSettingsSelector],
   (plans, ships, $ships, personalStats, settings) => {
     return plans
       .map(plan => {
@@ -402,6 +408,137 @@ export const shipMenuDataSelector = createSelector(
       })
       .filter(Boolean)
       .value()
+  }
+)
+
+// ============ 8. 养殖计划 Selectors ============
+
+// 船型选择器数据（用于养殖模式的舰船选择器）
+export const masterShipMenuDataSelector = createSelector(
+  [uniqueShipIdsSelector, $shipsSelector],
+  (uniqueIds, $ships) => {
+    return _(uniqueIds)
+      .map(id => {
+        const $ship = $ships[id]
+        if (!$ship) return null
+        const stype = Number($ship.api_stype)
+        if (!stype || stype > 22) return null
+        return {
+          api_id: id,
+          api_name: $ship.api_name,
+          api_yomi: $ship.api_yomi || $ship.api_name,
+          api_stype: stype,
+        }
+      })
+      .filter(Boolean)
+      .sortBy(['api_name'])
+      .value()
+  }
+)
+
+// 舰船 masterId 到改造链起点的映射缓存
+export const farmingShipLookupSelector = createSelector(
+  [shipUniqueMapSelector],
+  (shipUniqueMap) => shipUniqueMap
+)
+
+// 养殖计划（type === 'farming'）
+export const farmingPlansSelector = createSelector(
+  [plansSelector],
+  plans => _(plans)
+    .filter(plan => plan.type === 'farming')
+    .values()
+    .orderBy(['createdAt'], ['desc'])
+    .value()
+)
+
+// 养殖计划详情
+export const farmingPlanDetailsSelector = createSelector(
+  [farmingPlansSelector, ourShipsSelector, $shipsSelector, personalStatsSelector, planSettingsSelector, shipUniqueMapSelector],
+  (plans, ourShips, $ships, personalStats, settings, shipUniqueMap) => {
+    const {
+      defaultRank = 0,
+      defaultIsFlagship = true,
+      defaultIsMVP = false,
+    } = settings
+
+    return plans.map(plan => {
+      try {
+        const targetLv = plan.targetLevel
+        const shipUniqueId = plan.shipMasterId
+        const $baseShip = $ships[shipUniqueId]
+        if (!$baseShip) return null
+
+        // 筛选该改造链下所有低于目标等级的实例
+        const instances = _(ourShips)
+          .map(ship => {
+            const instanceUniqueId = shipUniqueMap[ship.api_ship_id]
+            if (instanceUniqueId !== shipUniqueId) return null
+            if (ship.api_lv >= targetLv) return null
+
+            const currentLv = ship.api_lv
+            const currentExp = ship.api_exp?.[0] || 0
+            const targetTotalExp = exp[targetLv] || 0
+            const startExp = 0
+            const requiredExp = targetTotalExp - currentExp
+            const progress = targetTotalExp > 0
+              ? Math.min(100.0, 100.0 * (currentExp / targetTotalExp))
+              : 0
+
+            const mapDetails = (plan.maps || []).map(mapId => {
+              const mapExpData = getMapExp(mapId, personalStats, 30)
+              const expPerSortie = calcBattleExp(mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP)
+              const sortiesNeeded = calcSortiesNeeded(requiredExp, mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP)
+              return {
+                mapId,
+                mapName: formatMapName(mapId),
+                mapExp: mapExpData.exp,
+                mapExpSource: mapExpData.source,
+                mapExpCount: mapExpData.count,
+                expPerSortie,
+                sortiesNeeded,
+              }
+            })
+
+            return {
+              shipId: ship.api_id,
+              currentLv,
+              currentExp,
+              requiredExp,
+              progress,
+              mapDetails,
+            }
+          })
+          .filter(Boolean)
+          .orderBy(['currentLv'], ['desc'])
+          .value()
+
+        const totalInstancesOwned = _(ourShips)
+          .filter(s => shipUniqueMap[s.api_ship_id] === shipUniqueId)
+          .size()
+
+        const totalInstancesBelowTarget = instances.length
+
+        return {
+          id: plan.id,
+          type: 'farming',
+          shipMasterId: shipUniqueId,
+          shipName: $baseShip.api_name,
+          $baseShip,
+          targetLv,
+          maps: plan.maps,
+          notes: plan.notes || '',
+          instances,
+          totalInstancesOwned,
+          totalInstancesBelowTarget,
+          createdAt: plan.createdAt,
+          updatedAt: plan.updatedAt,
+        }
+      } catch (error) {
+        console.error('[LevelingPlan] Error calculating farming plan detail:', plan.id, error)
+        return null
+      }
+    }).filter(Boolean)
   }
 )
 

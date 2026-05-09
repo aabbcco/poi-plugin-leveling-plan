@@ -3,7 +3,7 @@ import { Modal, Button, FormGroup, FormControl, ControlLabel } from 'react-boots
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
 import _ from 'lodash'
-import ShipSelector from './ship-selector'
+import ShipSelector, { MasterShipSelector } from './ship-selector'
 import MapSelector from './map-selector'
 import { ourShipsSelector, $shipsSelector, plansSelector } from '../../utils/selectors'
 import { createPlan, updatePlan, validatePlan } from '../../utils/plan-helpers'
@@ -11,15 +11,15 @@ import { getRemodelLevelsForShip } from '../../utils/kaisou-cost'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
 
-// 计划表单组件
 class PlanForm extends Component {
   constructor(props) {
     super(props)
 
     const { editingPlan } = props
+    const isFarming = props.planType === 'farming' || (editingPlan && editingPlan.type === 'farming')
 
     this.state = {
-      shipId: editingPlan ? editingPlan.shipId : '',
+      shipId: editingPlan ? (isFarming ? editingPlan.shipMasterId : editingPlan.shipId) : '',
       startLevel: editingPlan ? editingPlan.startLevel : "1",
       targetLevel: editingPlan ? editingPlan.targetLevel : '',
       maps: editingPlan ? editingPlan.maps : [],
@@ -30,8 +30,12 @@ class PlanForm extends Component {
 
   handleShipChange = (shipId) => {
     this.setState({ shipId })
-    const {ships} = this.props
-    this.setState({startLevel:shipId ? _.find(ships, s => s.api_id === parseInt(shipId)).api_lv : "1"})
+    const { planType, editingPlan, ships } = this.props
+    const isFarming = planType === 'farming' || (editingPlan && editingPlan.type === 'farming')
+    if (!isFarming && shipId) {
+      const found = _.find(ships, s => s.api_id === parseInt(shipId))
+      this.setState({ startLevel: found ? found.api_lv : "1" })
+    }
   }
 
   handleTargetLevelChange = (e) => {
@@ -54,10 +58,47 @@ class PlanForm extends Component {
   }
 
   handleSubmit = () => {
-    const { shipId, targetLevel,startLevel, maps, notes } = this.state
-    const { editingPlan, ships, $ships, onSave } = this.props
+    const { shipId, targetLevel, startLevel, maps, notes } = this.state
+    const { editingPlan, ships, $ships, onSave, planType } = this.props
+    const isFarming = planType === 'farming' || (editingPlan && editingPlan.type === 'farming')
 
-    // 查找舰娘数据
+    if (isFarming) {
+      const masterShipId = parseInt(shipId)
+      const $ship = $ships[masterShipId]
+      if (!$ship) {
+        this.setState({ errors: ['Ship master data not found'] })
+        return
+      }
+
+      let plan
+      if (editingPlan) {
+        plan = updatePlan(editingPlan, {
+          targetLevel: parseInt(targetLevel),
+          maps,
+          notes,
+        })
+      } else {
+        plan = createPlan(
+          null,
+          masterShipId,
+          null,
+          parseInt(targetLevel),
+          maps,
+          notes,
+          'farming'
+        )
+      }
+
+      const validation = validatePlan(plan)
+      if (!validation.valid) {
+        this.setState({ errors: validation.errors })
+        return
+      }
+
+      onSave(plan)
+      return
+    }
+
     const ship = _.find(ships, s => s.api_id === parseInt(shipId))
     if (!ship) {
       this.setState({ errors: ['Ship not found'] })
@@ -70,29 +111,26 @@ class PlanForm extends Component {
       return
     }
 
-    // 构建计划对象
     let plan
     if (editingPlan) {
-      // 更新现有计划
       plan = updatePlan(editingPlan, {
         targetLevel: parseInt(targetLevel),
-        startLevel:parseInt(startLevel),
+        startLevel: parseInt(startLevel),
         maps,
         notes,
       })
     } else {
-      // 创建新计划
       plan = createPlan(
         ship.api_id,
         ship.api_ship_id,
         parseInt(startLevel),
         parseInt(targetLevel),
         maps,
-        notes
+        notes,
+        'normal'
       )
     }
 
-    // 验证计划
     const validation = validatePlan(plan, ship)
     console.log(plan)
     if (!validation.valid) {
@@ -100,27 +138,29 @@ class PlanForm extends Component {
       return
     }
 
-    // 保存计划
     onSave(plan)
   }
 
   render() {
-    const { show, onHide, editingPlan, ships } = this.props
-    const { shipId,startLevel,targetLevel, maps, notes, errors } = this.state
+    const { show, onHide, editingPlan, ships, planType } = this.props
+    const { shipId, startLevel, targetLevel, maps, notes, errors } = this.state
+    const isFarming = planType === 'farming' || (editingPlan && editingPlan.type === 'farming')
 
-    // 获取当前选中的舰娘
     const selectedShip = shipId ? _.find(ships, s => s.api_id === parseInt(shipId)) : null
     const currentLevel = selectedShip ? selectedShip.api_lv : 0
+
+    const title = isFarming
+      ? (editingPlan ? __('Edit Farming Plan') : __('Add Farming Plan'))
+      : (editingPlan ? __('Edit Plan') : __('Add Plan'))
 
     return (
       <Modal show={show} onHide={onHide} bsSize="large">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingPlan ? __('Edit Plan') : __('Add Plan')}
+            {title}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {/* 错误提示 */}
           {errors.length > 0 && (
             <div className="alert alert-danger">
               <ul>
@@ -131,35 +171,40 @@ class PlanForm extends Component {
             </div>
           )}
 
-          {/* 舰娘选择 */}
           <FormGroup>
-            <ControlLabel>{__('Ship')}</ControlLabel>
-            <ShipSelector
-              value={shipId}
-              onChange={this.handleShipChange}
-              //disabled={!!editingPlan}
-            />
-            {editingPlan && (
+            <ControlLabel>{isFarming ? __('Ship Type') : __('Ship')}</ControlLabel>
+            {isFarming ? (
+              <MasterShipSelector
+                value={shipId}
+                onChange={this.handleShipChange}
+              />
+            ) : (
+              <ShipSelector
+                value={shipId}
+                onChange={this.handleShipChange}
+              />
+            )}
+            {editingPlan && !isFarming && (
               <p className="help-block">
                 {__('Cannot change ship in existing plan')}
               </p>
             )}
           </FormGroup>
 
-          {/* 初始等级 */}
-          <FormGroup>
-            <ControlLabel>{__('Start Level')}</ControlLabel>
-            <FormControl
-              type="number"
-              value={startLevel}
-              onChange={this.handleStarttLevelChange}
-              min={currentLevel + 1}
-              max={185}
-              placeholder={__('Enter Start level')}
-            />
-          </FormGroup>
+          {!isFarming && (
+            <FormGroup>
+              <ControlLabel>{__('Start Level')}</ControlLabel>
+              <FormControl
+                type="number"
+                value={startLevel}
+                onChange={this.handleStarttLevelChange}
+                min={currentLevel + 1}
+                max={185}
+                placeholder={__('Enter Start level')}
+              />
+            </FormGroup>
+          )}
 
-          {/* 目标等级 */}
           <FormGroup>
             <ControlLabel>{__('Target Level')}</ControlLabel>
             <FormControl
@@ -170,10 +215,13 @@ class PlanForm extends Component {
               max={185}
               placeholder={__('Enter target level')}
             />
-            {selectedShip && $ships && (() => {
-              const shipMasterId = selectedShip.api_ship_id
+            {(() => {
+              const shipMasterId = isFarming
+                ? parseInt(shipId)
+                : (selectedShip ? selectedShip.api_ship_id : null)
+              if (!shipMasterId || !$ships) return null
               const remodelLevels = getRemodelLevelsForShip(shipMasterId, $ships)
-              const startLv = parseInt(startLevel) || 0
+              const startLv = isFarming ? 0 : (parseInt(startLevel) || 0)
               const filteredLevels = remodelLevels.filter(lv => lv > startLv)
               if (filteredLevels.length === 0) return null
               return (
@@ -197,14 +245,13 @@ class PlanForm extends Component {
                 </div>
               )
             })()}
-            {selectedShip && (
+            {selectedShip && !isFarming && (
               <p className="help-block">
                 {__('Current level')}: {currentLevel}
               </p>
             )}
           </FormGroup>
 
-          {/* 海图选择 */}
           <FormGroup>
             <ControlLabel>{__('Maps')}</ControlLabel>
             <MapSelector
@@ -213,7 +260,6 @@ class PlanForm extends Component {
             />
           </FormGroup>
 
-          {/* 备注 */}
           <FormGroup>
             <ControlLabel>{__('Notes')} ({__('Optional')})</ControlLabel>
             <FormControl
@@ -236,7 +282,6 @@ class PlanForm extends Component {
   }
 }
 
-// Redux 连接
 const mapStateToProps = createSelector(
   [ourShipsSelector, $shipsSelector, plansSelector],
   (ships, $ships, plans) => ({

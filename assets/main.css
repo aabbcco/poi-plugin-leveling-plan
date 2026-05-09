@@ -178,6 +178,71 @@
   position: relative;
 }
 
+#leveling-plan .map-selector-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  background: #fff;
+}
+
+#leveling-plan .map-selector-trigger:hover {
+  border-color: #137cbd;
+}
+
+.bp5-dark #leveling-plan .map-selector-trigger {
+  background: #30404d;
+  border-color: #5f6b7c;
+}
+
+.bp5-dark #leveling-plan .map-selector-trigger:hover {
+  border-color: #137cbd;
+}
+
+#leveling-plan .map-selector-trigger-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+#leveling-plan .map-selector-trigger-placeholder {
+  flex: 1;
+  padding: 0 4px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+#leveling-plan .map-selector-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.bp5-dark #leveling-plan .map-selector-popover-header {
+  border-bottom-color: #404854;
+}
+
+#leveling-plan .map-selector-popover-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.bp5-dark #leveling-plan .map-selector-popover-title {
+  color: #ddd;
+}
+
+#leveling-plan .map-selector-popover-search {
+  padding: 4px 8px;
+}
+
 #leveling-plan .map-selector-dropdown {
   max-height: 200px;
   overflow-y: auto;
@@ -538,4 +603,11 @@
   max-height: 18px;
   object-fit: contain;
   vertical-align: middle;
+}
+
+/* 养殖计划行分隔线 */
+#leveling-plan .farming-divider {
+  height: 0;
+  border-top: 1px solid rgba(128, 128, 128, 0.2);
+  margin: 2px 0;
 }

@@ -52,5 +52,13 @@
   "Sample Count": "樣本數",
   "Currently Used": "當前使用",
   "Samples Insufficient": "樣本不足",
-  "No personal data": "無個人數據"
+  "No personal data": "無個人數據",
+  "Farming": "養殖",
+  "Add Farming Plan": "新增養殖計劃",
+  "Edit Farming Plan": "編輯養殖計劃",
+  "Ship Type": "艦種",
+  "No farming plans yet": "暫無養殖計劃",
+  "Below target": "未達標",
+  "ships": "艘",
+  "All ships have reached the target level": "所有船隻已達標"
 }
