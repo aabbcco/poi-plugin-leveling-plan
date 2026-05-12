@@ -78,7 +78,6 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
     requiredExp,
     progress,
     mapDetails,
-    notes,
     completed,
   } = planDetail
 
@@ -162,13 +161,6 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
             </div>
           </div>
 
-          {/* 备注 */}
-          {notes && (
-            <div className="notes-section">
-              <div className="notes-label">{__('Notes')}:</div>
-              <div className="notes-content">{notes}</div>
-            </div>
-          )}
         </div>
       </Panel.Body>
     </Panel>
@@ -233,22 +225,21 @@ export const FarmingPlanItem = ({ planDetail, onEdit, onDelete }) => {
   if (!planDetail || planDetail.type !== 'farming') return null
 
   const {
-    shipName,
-    targetLv,
-    instances,
-    totalInstancesBelowTarget,
-    notes,
+    displayTitle,
+    targets,
   } = planDetail
+
+  const totalBelow = targets.reduce((sum, t) => sum + t.totalInstancesBelowTarget, 0)
+  const totalOwned = targets.reduce((sum, t) => sum + t.totalInstancesOwned, 0)
 
   return (
     <Panel className="plan-item farming-plan-item">
       <Panel.Heading>
         <div className="plan-item-header">
           <div className="plan-item-title">
-            <span className="ship-name">{shipName}</span>
-            <span className="level-info"> → Lv.{targetLv}</span>
+            <span className="ship-name">{displayTitle}</span>
             <span style={{ marginLeft: 12, fontSize: '0.9em', opacity: 0.7 }}>
-              {__('Below target')}: {totalInstancesBelowTarget} {__('ships')}
+              {__('Below target')}: {totalBelow} {__('ships')} ({__('Total')}: {totalOwned})
             </span>
           </div>
           <div className="plan-item-actions">
@@ -258,27 +249,32 @@ export const FarmingPlanItem = ({ planDetail, onEdit, onDelete }) => {
         </div>
       </Panel.Heading>
       <Panel.Body>
-        {instances.length === 0 ? (
-          <div className="empty-message" style={{ fontStyle: 'italic', opacity: 0.7 }}>
-            {__('All ships have reached the target level')}
+        {(targets || []).map((target, ti) => (
+          <div key={target.shipMasterId} className="farming-target-group">
+            {ti > 0 && <FarmingDivider />}
+            <div style={{ fontWeight: 'bold', marginBottom: 4, fontSize: '0.95em' }}>
+              {target.shipName} → Lv.{target.targetLv}
+              <span style={{ marginLeft: 8, fontSize: '0.85em', fontWeight: 'normal', opacity: 0.7 }}>
+                {target.totalInstancesBelowTarget}/{target.totalInstancesOwned}
+              </span>
+            </div>
+            {target.instances.length === 0 ? (
+              <div className="empty-message" style={{ fontStyle: 'italic', opacity: 0.7, fontSize: '0.85em' }}>
+                {__('All ships have reached the target level')}
+              </div>
+            ) : (
+              <>
+                <FarmingHeaderRow />
+                {target.instances.map((inst, i) => (
+                  <React.Fragment key={inst.shipId}>
+                    {i > 0 && <FarmingDivider />}
+                    <FarmingInstanceRow inst={inst} />
+                  </React.Fragment>
+                ))}
+              </>
+            )}
           </div>
-        ) : (
-          <>
-            <FarmingHeaderRow />
-            {instances.map((inst, i) => (
-              <React.Fragment key={inst.shipId}>
-                {i > 0 && <FarmingDivider />}
-                <FarmingInstanceRow inst={inst} />
-              </React.Fragment>
-            ))}
-          </>
-        )}
-        {notes && (
-          <div className="notes-section" style={{ marginTop: 8, fontSize: '0.9em' }}>
-            <span style={{ opacity: 0.6 }}>{__('Notes')}: </span>
-            {notes}
-          </div>
-        )}
+        ))}
       </Panel.Body>
     </Panel>
   )

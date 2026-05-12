@@ -5,6 +5,7 @@ import { createSelector } from 'reselect'
 import _ from 'lodash'
 import ShipSelector, { MasterShipSelector } from './ship-selector'
 import MapSelector from './map-selector'
+import EquipShipSelector from './equip-ship-selector'
 import { ourShipsSelector, $shipsSelector, plansSelector } from '../../utils/selectors'
 import { createPlan, updatePlan, validatePlan } from '../../utils/plan-helpers'
 import { getRemodelLevelsForShip } from '../../utils/kaisou-cost'
@@ -18,13 +19,22 @@ class PlanForm extends Component {
     const { editingPlan } = props
     const isFarming = props.planType === 'farming' || (editingPlan && editingPlan.type === 'farming')
 
+    let selectionMode = 'shipName'
+    let selectedTargets = []
+    if (editingPlan && editingPlan.type === 'farming' && editingPlan.targets) {
+      selectionMode = 'equipment'
+      selectedTargets = editingPlan.targets
+    }
+
     this.state = {
-      shipId: editingPlan ? (isFarming ? editingPlan.shipMasterId : editingPlan.shipId) : '',
+      shipId: editingPlan ? (isFarming ? (editingPlan.targets ? '' : editingPlan.shipMasterId) : editingPlan.shipId) : '',
       startLevel: editingPlan ? editingPlan.startLevel : "1",
-      targetLevel: editingPlan ? editingPlan.targetLevel : '',
+      targetLevel: editingPlan ? (editingPlan.targets ? '' : editingPlan.targetLevel) : '',
       maps: editingPlan ? editingPlan.maps : [],
       notes: editingPlan ? editingPlan.notes : '',
       errors: [],
+      selectionMode,
+      selectedTargets,
     }
   }
 
@@ -53,16 +63,38 @@ class PlanForm extends Component {
     this.setState({ maps })
   }
 
-  handleNotesChange = (e) => {
-    this.setState({ notes: e.target.value })
-  }
-
   handleSubmit = () => {
     const { shipId, targetLevel, startLevel, maps, notes } = this.state
     const { editingPlan, ships, $ships, onSave, planType } = this.props
     const isFarming = planType === 'farming' || (editingPlan && editingPlan.type === 'farming')
 
     if (isFarming) {
+      if (this.state.selectionMode === 'equipment') {
+        if (this.state.selectedTargets.length === 0) {
+          this.setState({ errors: ['Please select at least one ship'] })
+          return
+        }
+        let plan
+        if (editingPlan) {
+          plan = updatePlan(editingPlan, {
+            targets: this.state.selectedTargets,
+            maps,
+            notes,
+          })
+        } else {
+          plan = createPlan(
+            null, null, null, null, maps, notes, 'farming', this.state.selectedTargets
+          )
+        }
+        const validation = validatePlan(plan)
+        if (!validation.valid) {
+          this.setState({ errors: validation.errors })
+          return
+        }
+        onSave(plan)
+        return
+      }
+
       const masterShipId = parseInt(shipId)
       const $ship = $ships[masterShipId]
       if (!$ship) {
@@ -143,7 +175,7 @@ class PlanForm extends Component {
 
   render() {
     const { show, onHide, editingPlan, ships, planType } = this.props
-    const { shipId, startLevel, targetLevel, maps, notes, errors } = this.state
+    const { shipId, startLevel, targetLevel, maps, errors, selectionMode, selectedTargets } = this.state
     const isFarming = planType === 'farming' || (editingPlan && editingPlan.type === 'farming')
 
     const selectedShip = shipId ? _.find(ships, s => s.api_id === parseInt(shipId)) : null
@@ -173,12 +205,39 @@ class PlanForm extends Component {
 
           <FormGroup>
             <ControlLabel>{isFarming ? __('Ship Type') : __('Ship')}</ControlLabel>
-            {isFarming ? (
+            {isFarming && (
+              <div className="btn-group" style={{ marginBottom: 8 }}>
+                <Button
+                  bsSize="small"
+                  bsStyle={selectionMode === 'shipName' ? 'primary' : 'default'}
+                  onClick={() => this.setState({ selectionMode: 'shipName' })}
+                >
+                  {__('By Ship Name')}
+                </Button>
+                <Button
+                  bsSize="small"
+                  bsStyle={selectionMode === 'equipment' ? 'primary' : 'default'}
+                  onClick={() => this.setState({ selectionMode: 'equipment' })}
+                >
+                  {__('By Equipment')}
+                </Button>
+              </div>
+            )}
+            {isFarming && selectionMode === 'shipName' && (
               <MasterShipSelector
                 value={shipId}
                 onChange={this.handleShipChange}
               />
-            ) : (
+            )}
+            {isFarming && selectionMode === 'equipment' && (
+              <div style={{ height: 360 }}>
+                <EquipShipSelector
+                  selectedTargets={selectedTargets}
+                  onChange={(targets) => this.setState({ selectedTargets: targets })}
+                />
+              </div>
+            )}
+            {!isFarming && (
               <ShipSelector
                 value={shipId}
                 onChange={this.handleShipChange}
@@ -205,52 +264,54 @@ class PlanForm extends Component {
             </FormGroup>
           )}
 
-          <FormGroup>
-            <ControlLabel>{__('Target Level')}</ControlLabel>
-            <FormControl
-              type="number"
-              value={targetLevel}
-              onChange={this.handleTargetLevelChange}
-              min={currentLevel + 1}
-              max={185}
-              placeholder={__('Enter target level')}
-            />
-            {(() => {
-              const shipMasterId = isFarming
-                ? parseInt(shipId)
-                : (selectedShip ? selectedShip.api_ship_id : null)
-              if (!shipMasterId || !$ships) return null
-              const remodelLevels = getRemodelLevelsForShip(shipMasterId, $ships)
-              const startLv = isFarming ? 0 : (parseInt(startLevel) || 0)
-              const filteredLevels = remodelLevels.filter(lv => lv > startLv)
-              if (filteredLevels.length === 0) return null
-              return (
-                <div className="remodel-level-tags" style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {filteredLevels.map(lv => (
-                    <span
-                      key={lv}
-                      onClick={() => this.setState({ targetLevel: String(lv) })}
-                      style={{
-                        cursor: 'pointer',
-                        padding: '2px 8px',
-                        backgroundColor: parseInt(targetLevel) === lv ? '#337ab7' : '#f0f0f0',
-                        color: parseInt(targetLevel) === lv ? 'white' : '#333',
-                        borderRadius: 3,
-                        fontSize: 12,
-                      }}
-                    >
-                      lv{lv}
-                    </span>
-                  ))}
-                </div>
-              )
-            })()}
-            {selectedShip && !isFarming && (
-              <p className="help-block">
-                {__('Current level')}: {currentLevel}
-              </p>
-            )}
-          </FormGroup>
+          {(!isFarming || selectionMode === 'shipName') && (
+            <FormGroup>
+              <ControlLabel>{__('Target Level')}</ControlLabel>
+              <FormControl
+                type="number"
+                value={targetLevel}
+                onChange={this.handleTargetLevelChange}
+                min={currentLevel + 1}
+                max={185}
+                placeholder={__('Enter target level')}
+              />
+              {(() => {
+                const shipMasterId = isFarming
+                  ? parseInt(shipId)
+                  : (selectedShip ? selectedShip.api_ship_id : null)
+                if (!shipMasterId || !$ships) return null
+                const remodelLevels = getRemodelLevelsForShip(shipMasterId, $ships)
+                const startLv = isFarming ? 0 : (parseInt(startLevel) || 0)
+                const filteredLevels = remodelLevels.filter(lv => lv > startLv)
+                if (filteredLevels.length === 0) return null
+                return (
+                  <div className="remodel-level-tags" style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {filteredLevels.map(lv => (
+                      <span
+                        key={lv}
+                        onClick={() => this.setState({ targetLevel: String(lv) })}
+                        style={{
+                          cursor: 'pointer',
+                          padding: '2px 8px',
+                          backgroundColor: parseInt(targetLevel) === lv ? '#337ab7' : '#f0f0f0',
+                          color: parseInt(targetLevel) === lv ? 'white' : '#333',
+                          borderRadius: 3,
+                          fontSize: 12,
+                        }}
+                      >
+                        lv{lv}
+                      </span>
+                    ))}
+                  </div>
+                )
+              })()}
+              {selectedShip && !isFarming && (
+                <p className="help-block">
+                  {__('Current level')}: {currentLevel}
+                </p>
+              )}
+            </FormGroup>
+          )}
 
           <FormGroup>
             <ControlLabel>{__('Maps')}</ControlLabel>
@@ -260,16 +321,6 @@ class PlanForm extends Component {
             />
           </FormGroup>
 
-          <FormGroup>
-            <ControlLabel>{__('Notes')} ({__('Optional')})</ControlLabel>
-            <FormControl
-              componentClass="textarea"
-              value={notes}
-              onChange={this.handleNotesChange}
-              rows={3}
-              placeholder={__('Enter notes')}
-            />
-          </FormGroup>
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={onHide}>{__('Cancel')}</Button>

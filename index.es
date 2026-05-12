@@ -44,3 +44,24 @@ if (typeof setImmediate === 'function') {
     }
   }, 0)
 }
+
+// Initialize equip sync in background
+if (typeof setImmediate === 'function') {
+  setImmediate(() => {
+    try {
+      const { initEquipSync } = require('./services/equip-sync-service')
+      initEquipSync()
+    } catch (error) {
+      console.error('[LevelingPlan] Failed to init equip sync:', error)
+    }
+  })
+} else {
+  setTimeout(() => {
+    try {
+      const { initEquipSync } = require('./services/equip-sync-service')
+      initEquipSync()
+    } catch (error) {
+      console.error('[LevelingPlan] Failed to init equip sync:', error)
+    }
+  }, 0)
+}

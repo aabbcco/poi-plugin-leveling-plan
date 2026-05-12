@@ -10,6 +10,7 @@ import { exp, MAX_LEVEL, EXP_BY_POI_DB } from './constants'
 import { getMapExp, getMapExpBatch, calcBattleExp, calcSortiesNeeded } from './exp-calculator'
 import { calcPlanDetail, formatMapName } from './plan-helpers'
 import { KEY_PLANS, KEY_SETTINGS, KEY_STATS } from './config-helper'
+import { getFarmingMap, composeEquipmentList } from './equip-provider'
 
 // ============ 1. 基础数据 Selectors ============
 
@@ -23,6 +24,18 @@ export const $shipsSelector = createSelector(
 export const $mapsSelector = createSelector(
   [constSelector],
   $const => _.get($const, '$maps', {})
+)
+
+// 装备数据
+export const $equipmentsSelector = createSelector(
+  [constSelector],
+  $const => $const.$equips || $const.$equipments || $const.$slotitems || {}
+)
+
+// 装备类型数据
+export const $equipTypesSelector = createSelector(
+  [constSelector],
+  $const => $const.$equipTypes || {}
 )
 
 // 玩家拥有的舰船（动态）
@@ -442,6 +455,29 @@ export const farmingShipLookupSelector = createSelector(
   (shipUniqueMap) => shipUniqueMap
 )
 
+// ============ 4. 装备→舰娘映射 Selectors ============
+
+export const equipFarmingMapSelector = createSelector(
+  [$shipsSelector],
+  ($ships) => getFarmingMap($ships)
+)
+
+export const equipListSelector = createSelector(
+  [equipFarmingMapSelector, $shipsSelector, $equipmentsSelector, $equipTypesSelector],
+  (farmingMap, $ships, $equipments, $equipTypes) =>
+    composeEquipmentList(farmingMap, $ships, $equipments, $equipTypes)
+)
+
+export const equipSyncMetaSelector = () => {
+  try {
+    return window.config.get('plugin.poi-plugin-leveling-plan.equipSyncMeta', {})
+  } catch (e) {
+    return {}
+  }
+}
+
+// ============ 5. 养殖计划 Selectors ============
+
 // 养殖计划（type === 'farming'）
 export const farmingPlansSelector = createSelector(
   [plansSelector],
@@ -464,73 +500,88 @@ export const farmingPlanDetailsSelector = createSelector(
 
     return plans.map(plan => {
       try {
-        const targetLv = plan.targetLevel
-        const shipUniqueId = plan.shipMasterId
-        const $baseShip = $ships[shipUniqueId]
-        if (!$baseShip) return null
+        const targets = plan.targets
+          || [{ shipMasterId: plan.shipMasterId, targetLevel: plan.targetLevel }]
 
-        // 筛选该改造链下所有低于目标等级的实例
-        const instances = _(ourShips)
-          .map(ship => {
-            const instanceUniqueId = shipUniqueMap[ship.api_ship_id]
-            if (instanceUniqueId !== shipUniqueId) return null
-            if (ship.api_lv >= targetLv) return null
+        const targetDetails = targets.map(({ shipMasterId, targetLevel }) => {
+          const shipUniqueId = shipMasterId
+          const $baseShip = $ships[shipUniqueId]
+          if (!$baseShip) return null
 
-            const currentLv = ship.api_lv
-            const currentExp = ship.api_exp?.[0] || 0
-            const targetTotalExp = exp[targetLv] || 0
-            const startExp = 0
-            const requiredExp = targetTotalExp - currentExp
-            const progress = targetTotalExp > 0
-              ? Math.min(100.0, 100.0 * (currentExp / targetTotalExp))
-              : 0
+          const targetLv = targetLevel
 
-            const mapDetails = (plan.maps || []).map(mapId => {
-              const mapExpData = getMapExp(mapId, personalStats, 30)
-              const expPerSortie = calcBattleExp(mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP)
-              const sortiesNeeded = calcSortiesNeeded(requiredExp, mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP)
+          const instances = _(ourShips)
+            .map(ship => {
+              const instanceUniqueId = shipUniqueMap[ship.api_ship_id]
+              if (instanceUniqueId !== shipUniqueId) return null
+              if (ship.api_lv >= targetLv) return null
+
+              const currentLv = ship.api_lv
+              const currentExp = ship.api_exp?.[0] || 0
+              const targetTotalExp = exp[targetLv] || 0
+              const requiredExp = targetTotalExp - currentExp
+              const progress = targetTotalExp > 0
+                ? Math.min(100.0, 100.0 * (currentExp / targetTotalExp))
+                : 0
+
+              const mapDetails = (plan.maps || []).map(mapId => {
+                const mapExpData = getMapExp(mapId, personalStats, 30)
+                const expPerSortie = calcBattleExp(mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP)
+                const sortiesNeeded = calcSortiesNeeded(requiredExp, mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP)
+                return {
+                  mapId,
+                  mapName: formatMapName(mapId),
+                  mapExp: mapExpData.exp,
+                  mapExpSource: mapExpData.source,
+                  mapExpCount: mapExpData.count,
+                  expPerSortie,
+                  sortiesNeeded,
+                }
+              })
+
               return {
-                mapId,
-                mapName: formatMapName(mapId),
-                mapExp: mapExpData.exp,
-                mapExpSource: mapExpData.source,
-                mapExpCount: mapExpData.count,
-                expPerSortie,
-                sortiesNeeded,
+                shipId: ship.api_id,
+                currentLv,
+                currentExp,
+                requiredExp,
+                progress,
+                mapDetails,
               }
             })
+            .filter(Boolean)
+            .orderBy(['currentLv'], ['desc'])
+            .value()
 
-            return {
-              shipId: ship.api_id,
-              currentLv,
-              currentExp,
-              requiredExp,
-              progress,
-              mapDetails,
-            }
-          })
-          .filter(Boolean)
-          .orderBy(['currentLv'], ['desc'])
-          .value()
+          const totalInstancesOwned = _(ourShips)
+            .filter(s => shipUniqueMap[s.api_ship_id] === shipUniqueId)
+            .size()
 
-        const totalInstancesOwned = _(ourShips)
-          .filter(s => shipUniqueMap[s.api_ship_id] === shipUniqueId)
-          .size()
+          return {
+            shipMasterId,
+            shipName: $baseShip.api_name,
+            $baseShip,
+            targetLv,
+            instances,
+            totalInstancesOwned,
+            totalInstancesBelowTarget: instances.length,
+          }
+        }).filter(Boolean)
 
-        const totalInstancesBelowTarget = instances.length
+        if (targetDetails.length === 0) return null
+
+        const displayTitle = targetDetails.length === 1
+          ? `${targetDetails[0].shipName} → Lv.${targetDetails[0].targetLv}`
+          : targetDetails.map(t => t.shipName).join('+')
+            + ' → '
+            + targetDetails.map(t => `Lv.${t.targetLv}`).join(' / ')
 
         return {
           id: plan.id,
           type: 'farming',
-          shipMasterId: shipUniqueId,
-          shipName: $baseShip.api_name,
-          $baseShip,
-          targetLv,
+          displayTitle,
+          targets: targetDetails,
           maps: plan.maps,
           notes: plan.notes || '',
-          instances,
-          totalInstancesOwned,
-          totalInstancesBelowTarget,
           createdAt: plan.createdAt,
           updatedAt: plan.updatedAt,
         }

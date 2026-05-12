@@ -19,20 +19,34 @@ export const validatePlan = (plan, ship = null) => {
   const errors = []
   const isFarming = plan.type === 'farming'
 
-  if (!isFarming && !plan.shipId) {
-    errors.push('shipId is required')
-  }
+  if (isFarming && plan.targets) {
+    if (!plan.targets.length) {
+      errors.push('at least one ship target is required')
+    }
+    plan.targets.forEach((t, i) => {
+      if (!t.shipMasterId) {
+        errors.push(`targets[${i}]: shipMasterId is required`)
+      }
+      if (!t.targetLevel || t.targetLevel < 1 || t.targetLevel > 185) {
+        errors.push(`targets[${i}]: targetLevel must be between 1 and 185`)
+      }
+    })
+  } else {
+    if (!isFarming && !plan.shipId) {
+      errors.push('shipId is required')
+    }
 
-  if (!plan.shipMasterId) {
-    errors.push('shipMasterId is required')
-  }
+    if (!plan.shipMasterId) {
+      errors.push('shipMasterId is required')
+    }
 
-  if (!plan.targetLevel || plan.targetLevel < 1 || plan.targetLevel > 185) {
-    errors.push('targetLevel must be between 1 and 185')
-  }
+    if (!plan.targetLevel || plan.targetLevel < 1 || plan.targetLevel > 185) {
+      errors.push('targetLevel must be between 1 and 185')
+    }
 
-  if (!isFarming && ship && plan.targetLevel <= ship.api_lv) {
-    errors.push('targetLevel must be greater than current level')
+    if (!isFarming && ship && plan.targetLevel <= ship.api_lv) {
+      errors.push('targetLevel must be greater than current level')
+    }
   }
 
   if (!plan.maps || !Array.isArray(plan.maps) || plan.maps.length === 0) {
@@ -168,13 +182,11 @@ export const formatMapName = (mapId) => {
  * @param {string} notes - 备注
  * @returns {object} 新计划对象
  */
-export const createPlan = (shipId, shipMasterId, startLevel, targetLevel, maps, notes = '', type = 'normal') => {
+export const createPlan = (shipId, shipMasterId, startLevel, targetLevel, maps, notes = '', type = 'normal', targets = null) => {
   const now = Date.now()
   
   const base = {
     id: generatePlanId(),
-    shipMasterId,
-    targetLevel,
     maps,
     notes,
     type,
@@ -183,13 +195,18 @@ export const createPlan = (shipId, shipMasterId, startLevel, targetLevel, maps, 
   }
 
   if (type === 'farming') {
-    return base
+    if (targets && targets.length > 0) {
+      return { ...base, targets }
+    }
+    return { ...base, shipMasterId, targetLevel }
   }
 
   return {
     ...base,
     shipId,
+    shipMasterId,
     startLevel,
+    targetLevel,
     completed: false,
     completedAt: null,
   }

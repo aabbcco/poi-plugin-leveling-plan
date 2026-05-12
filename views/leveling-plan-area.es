@@ -70,12 +70,21 @@ export const LevelingPlanArea = connect(state => ({
     const { editingPlanId } = this.state
 
     if (editingPlanId) {
-      updatePlan(editingPlanId, {
-        targetLevel: plan.targetLevel,
-        startLevel: plan.startLevel,
+      const updates = {
         maps: plan.maps,
         notes: plan.notes,
-      })
+      }
+      if (plan.targets) {
+        updates.targets = plan.targets
+      } else {
+        updates.targets = null
+        updates.targetLevel = plan.targetLevel
+        updates.shipMasterId = plan.shipMasterId
+        if (plan.startLevel !== undefined) {
+          updates.startLevel = plan.startLevel
+        }
+      }
+      updatePlan(editingPlanId, updates)
     } else {
       addPlan(plan)
     }

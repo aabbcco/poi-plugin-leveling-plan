@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Panel, FormGroup, ControlLabel, FormControl, Button } from 'react-bootstrap'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
-import { planSettingsSelector, personalStatsSelector } from '../../utils/selectors'
+import { planSettingsSelector, personalStatsSelector, equipSyncMetaSelector } from '../../utils/selectors'
 import { expLevel, EXP_BY_POI_DB } from '../../utils/constants'
 import { getMapExp } from '../../utils/exp-calculator'
 import { formatMapName } from '../../utils/plan-helpers'
@@ -59,6 +59,64 @@ const MapExperienceOverview = ({ personalStats }) => {
   )
 }
 
+// 装备数据同步面板
+const EquipSyncPanel = ({ meta: propsMeta }) => {
+  const [syncing, setSyncing] = React.useState(false)
+  const [meta, setMeta] = React.useState(propsMeta)
+  const [result, setResult] = React.useState(null)
+
+  React.useEffect(() => {
+    setMeta(propsMeta)
+  }, [propsMeta])
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setResult(null)
+    try {
+      const { manualSync } = await import('../../services/equip-sync-service')
+      const res = await manualSync()
+      setResult(res)
+      if (res.success && res.meta) {
+        setMeta(res.meta)
+      }
+    } catch (e) {
+      setResult({ success: false, error: e.message })
+    }
+    setSyncing(false)
+  }
+
+  const formatTime = (ts) => {
+    if (!ts) return __('No data yet')
+    try {
+      return new Date(ts).toLocaleString()
+    } catch (e) {
+      return ts
+    }
+  }
+
+  return (
+    <div>
+      <p>{__('Last sync')}: {formatTime(meta ? meta.updated_at : null)}</p>
+      <p>{__('Equipment entries')}: {meta && meta.equip_count ? meta.equip_count : '-'}</p>
+      <p>{__('Ship entries')}: {meta && meta.ship_entry_count ? meta.ship_entry_count : '-'}</p>
+      <div className="settings-actions">
+        <Button bsStyle="primary" onClick={handleSync} disabled={syncing}>
+          {syncing ? __('Syncing...') : __('Sync Now')}
+        </Button>
+      </div>
+      {result && result.success && result.unchanged && (
+        <p className="text-success" style={{ marginTop: 6 }}>{__('Already up to date')}</p>
+      )}
+      {result && result.success && !result.unchanged && (
+        <p className="text-success" style={{ marginTop: 6 }}>{__('Sync completed')}</p>
+      )}
+      {result && !result.success && (
+        <p className="text-danger" style={{ marginTop: 6 }}>{__('Sync failed')}: {result.error}</p>
+      )}
+    </div>
+  )
+}
+
 // 计划设置组件
 class PlanSettings extends Component {
   constructor(props) {
@@ -106,7 +164,7 @@ class PlanSettings extends Component {
 
   render() {
     const { defaultRank, defaultIsFlagship, defaultIsMVP } = this.state
-    const { personalStats } = this.props
+    const { personalStats, equipSyncMeta } = this.props
 
     return (
       <>
@@ -184,6 +242,15 @@ class PlanSettings extends Component {
           <MapExperienceOverview personalStats={personalStats} />
         </Panel.Body>
       </Panel>
+      {/* 装备数据同步 */}
+      <Panel className="equip-sync-panel">
+        <Panel.Heading>
+          <Panel.Title>{__('Equipment-Ship Data Sync')}</Panel.Title>
+        </Panel.Heading>
+        <Panel.Body>
+          <EquipSyncPanel meta={equipSyncMeta} />
+        </Panel.Body>
+      </Panel>
       </>
     )
   }
@@ -191,10 +258,11 @@ class PlanSettings extends Component {
 
 // Redux 连接
 const mapStateToProps = createSelector(
-  [planSettingsSelector, personalStatsSelector],
-  (settings, personalStats) => ({
+  [planSettingsSelector, personalStatsSelector, equipSyncMetaSelector],
+  (settings, personalStats, equipSyncMeta) => ({
     settings,
     personalStats,
+    equipSyncMeta,
   })
 )
 
