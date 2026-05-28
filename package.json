@@ -1,6 +1,6 @@
 {
   "name": "poi-plugin-leveling-plan",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "Leveling plan plugin for poi",
   "main": "index.js",
   "keywords": [
