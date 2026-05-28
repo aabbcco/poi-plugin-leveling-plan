@@ -1,4 +1,4 @@
-const PAGES_BASE = 'https://yuki.github.io/poi-equip-ships-data'
+const PAGES_BASE = 'https://aabbcco.github.io/poi-equip-ships-data'
 const CONFIG_KEY = 'plugin.poi-plugin-leveling-plan'
 const META_KEY = `${CONFIG_KEY}.equipSyncMeta`
 const DATA_KEY = `${CONFIG_KEY}.equipShipsData`
