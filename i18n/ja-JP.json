@@ -78,5 +78,10 @@
   "No equipment data. Try syncing in Settings.": "装備データがありません。設定で同期してください",
   "No equipment matches filter.": "一致する装備がありません",
   "Total": "合計",
-  "EXP": "経験値"
+  "EXP": "経験値",
+  "Remodel Costs": "改造コスト",
+  "Total Remodel Cost": "改造コスト合計",
+  "Kaisou Materials Sync": "改造素材同期",
+  "Ship remodel entries": "改造艦船エントリ",
+  "No active plans": "進行中の計画がありません"
 }

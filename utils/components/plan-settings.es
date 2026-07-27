@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Panel, FormGroup, ControlLabel, FormControl, Button } from 'react-bootstrap'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
-import { planSettingsSelector, personalStatsSelector, equipSyncMetaSelector } from '../../utils/selectors'
+import { planSettingsSelector, personalStatsSelector, equipSyncMetaSelector, kaisouSyncMetaSelector } from '../../utils/selectors'
 import { expLevel, EXP_BY_POI_DB } from '../../utils/constants'
 import { getMapExp } from '../../utils/exp-calculator'
 import { formatMapName } from '../../utils/plan-helpers'
@@ -117,6 +117,63 @@ const EquipSyncPanel = ({ meta: propsMeta }) => {
   )
 }
 
+// 改造消耗数据同步面板
+const KaisouSyncPanel = ({ meta: propsMeta }) => {
+  const [syncing, setSyncing] = React.useState(false)
+  const [meta, setMeta] = React.useState(propsMeta)
+  const [result, setResult] = React.useState(null)
+
+  React.useEffect(() => {
+    setMeta(propsMeta)
+  }, [propsMeta])
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setResult(null)
+    try {
+      const { manualKaisouSync } = await import('../../services/kaisou-sync-service')
+      const res = await manualKaisouSync()
+      setResult(res)
+      if (res.success && res.meta) {
+        setMeta(res.meta)
+      }
+    } catch (e) {
+      setResult({ success: false, error: e.message })
+    }
+    setSyncing(false)
+  }
+
+  const formatTime = (ts) => {
+    if (!ts) return __('No data yet')
+    try {
+      return new Date(ts).toLocaleString()
+    } catch (e) {
+      return ts
+    }
+  }
+
+  return (
+    <div>
+      <p>{__('Last sync')}: {formatTime(meta ? meta.updated_at : null)}</p>
+      <p>{__('Ship remodel entries')}: {meta && meta.kaisou_count ? meta.kaisou_count : '-'}</p>
+      <div className="settings-actions">
+        <Button bsStyle="primary" onClick={handleSync} disabled={syncing}>
+          {syncing ? __('Syncing...') : __('Sync Now')}
+        </Button>
+      </div>
+      {result && result.success && result.unchanged && (
+        <p className="text-success" style={{ marginTop: 6 }}>{__('Already up to date')}</p>
+      )}
+      {result && result.success && !result.unchanged && (
+        <p className="text-success" style={{ marginTop: 6 }}>{__('Sync completed')}</p>
+      )}
+      {result && !result.success && (
+        <p className="text-danger" style={{ marginTop: 6 }}>{__('Sync failed')}: {result.error}</p>
+      )}
+    </div>
+  )
+}
+
 // 计划设置组件
 class PlanSettings extends Component {
   constructor(props) {
@@ -164,7 +221,7 @@ class PlanSettings extends Component {
 
   render() {
     const { defaultRank, defaultIsFlagship, defaultIsMVP } = this.state
-    const { personalStats, equipSyncMeta } = this.props
+    const { personalStats, equipSyncMeta, kaisouSyncMeta } = this.props
 
     return (
       <>
@@ -251,6 +308,15 @@ class PlanSettings extends Component {
           <EquipSyncPanel meta={equipSyncMeta} />
         </Panel.Body>
       </Panel>
+      {/* 改造消耗数据同步 */}
+      <Panel className="equip-sync-panel">
+        <Panel.Heading>
+          <Panel.Title>{__('Kaisou Materials Sync')}</Panel.Title>
+        </Panel.Heading>
+        <Panel.Body>
+          <KaisouSyncPanel meta={kaisouSyncMeta} />
+        </Panel.Body>
+      </Panel>
       </>
     )
   }
@@ -258,11 +324,12 @@ class PlanSettings extends Component {
 
 // Redux 连接
 const mapStateToProps = createSelector(
-  [planSettingsSelector, personalStatsSelector, equipSyncMetaSelector],
-  (settings, personalStats, equipSyncMeta) => ({
+  [planSettingsSelector, personalStatsSelector, equipSyncMetaSelector, kaisouSyncMetaSelector],
+  (settings, personalStats, equipSyncMeta, kaisouSyncMeta) => ({
     settings,
     personalStats,
     equipSyncMeta,
+    kaisouSyncMeta,
   })
 )
 

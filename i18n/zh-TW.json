@@ -78,5 +78,10 @@
   "No equipment data. Try syncing in Settings.": "暫無裝備數據，請在設定中同步",
   "No equipment matches filter.": "無匹配裝備",
   "Total": "總計",
-  "EXP": "經驗"
+  "EXP": "經驗",
+  "Remodel Costs": "改造消耗",
+  "Total Remodel Cost": "改造消耗總計",
+  "Kaisou Materials Sync": "改造材料同步",
+  "Ship remodel entries": "改造艦船條目",
+  "No active plans": "暫無進行中的計劃"
 }

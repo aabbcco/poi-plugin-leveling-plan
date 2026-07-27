@@ -69,6 +69,10 @@ export const multiplyCost = (cost, multiplier) => {
 }
 
 export const getShipMaterials = shipMasterId => {
+  try {
+    const remote = window.config.get('plugin.poi-plugin-leveling-plan.kaisouMaterials', null)
+    if (remote && remote[String(shipMasterId)]) return remote[String(shipMasterId)]
+  } catch (e) { /* fall through */ }
   return kaisouMaterials[String(shipMasterId)] || null
 }
 
@@ -131,11 +135,17 @@ export const getRemodelLevelsForShip = (shipMasterId, $ships) => {
     iterations++
 
     const nextId = +($ships[current]?.api_aftershipid || 0)
-    if (nextId <= 0 || visited.has(nextId)) break
+    if (nextId <= 0 || visited.has(nextId)) {
+      const lastLv = +($ships[current]?.api_afterlv || 0)
+      if (lastLv > 0 && lastLv < 200) {
+        levels.push(lastLv)
+      }
+      break
+    }
     visited.add(nextId)
 
-    const nextLv = +($ships[nextId]?.api_afterlv || 0)
-    if (nextLv > 0 && nextLv < 200) { // 过滤异常值
+    const nextLv = +($ships[current]?.api_afterlv || 0)
+    if (nextLv > 0 && nextLv < 200) {
       levels.push(nextLv)
     }
 
@@ -222,7 +232,15 @@ export const calcAllShortages = (totalCost, resources, useitems, equips) => {
   }
 
   Object.entries(totalCost.consumable || {}).forEach(([itemId, required]) => {
-    const available = _.get(useitems, [itemId, 'api_count'], 0)
+    const isMaterialItem = itemId === '1' || itemId === '2' || itemId === '3' || itemId === '4'
+    const available = isMaterialItem
+      ? (resourcesArr[RESOURCE_INDEX[{
+          '1': 'bucket',
+          '2': 'buildkit',
+          '3': 'devmat',
+          '4': 'screw',
+        }[itemId]]] || 0)
+      : _.get(useitems, [itemId, 'api_count'], 0)
     shortages.consumable[itemId] = calcShortage(required, available)
   })
 

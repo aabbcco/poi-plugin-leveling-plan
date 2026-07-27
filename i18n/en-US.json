@@ -78,5 +78,10 @@
   "No equipment data. Try syncing in Settings.": "No equipment data. Try syncing in Settings.",
   "No equipment matches filter.": "No equipment matches filter.",
   "Total": "Total",
-  "EXP": "EXP"
+  "EXP": "EXP",
+  "Remodel Costs": "Remodel Costs",
+  "Total Remodel Cost": "Total Remodel Cost",
+  "Kaisou Materials Sync": "Remodel Materials Sync",
+  "Ship remodel entries": "Ship remodel entries",
+  "No active plans": "No active plans"
 }

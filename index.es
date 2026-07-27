@@ -12,7 +12,6 @@ export const windowOptions = {
 }
 
 // Initialize observers when plugin loads
-// Import and initialize in next tick to ensure POI is ready
 if (typeof setImmediate === 'function') {
   setImmediate(() => {
     try {
@@ -45,7 +44,7 @@ if (typeof setImmediate === 'function') {
   }, 0)
 }
 
-// Initialize equip sync in background
+// Initialize remote sync in background
 if (typeof setImmediate === 'function') {
   setImmediate(() => {
     try {
@@ -53,6 +52,12 @@ if (typeof setImmediate === 'function') {
       initEquipSync()
     } catch (error) {
       console.error('[LevelingPlan] Failed to init equip sync:', error)
+    }
+    try {
+      const { initKaisouSync } = require('./services/kaisou-sync-service')
+      initKaisouSync()
+    } catch (error) {
+      console.error('[LevelingPlan] Failed to init kaisou sync:', error)
     }
   })
 } else {
@@ -62,6 +67,12 @@ if (typeof setImmediate === 'function') {
       initEquipSync()
     } catch (error) {
       console.error('[LevelingPlan] Failed to init equip sync:', error)
+    }
+    try {
+      const { initKaisouSync } = require('./services/kaisou-sync-service')
+      initKaisouSync()
+    } catch (error) {
+      console.error('[LevelingPlan] Failed to init kaisou sync:', error)
     }
   }, 0)
 }

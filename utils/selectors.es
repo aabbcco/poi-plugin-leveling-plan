@@ -476,6 +476,14 @@ export const equipSyncMetaSelector = () => {
   }
 }
 
+export const kaisouSyncMetaSelector = () => {
+  try {
+    return window.config.get('plugin.poi-plugin-leveling-plan.kaisouMeta', {})
+  } catch (e) {
+    return {}
+  }
+}
+
 // ============ 5. 养殖计划 Selectors ============
 
 // 养殖计划（type === 'farming'）

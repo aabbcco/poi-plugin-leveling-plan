@@ -1,10 +1,12 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
+import _ from 'lodash'
 import { Nav, NavItem, Col, Grid, Button } from 'react-bootstrap'
 import { join } from 'path-extra'
 import PlanList from '../utils/components/plan-list'
 import FarmingPlanList from '../utils/components/farming-plan-list'
+import RemodelCosts from '../utils/components/remodel-costs'
 import PlanForm from '../utils/components/plan-form'
 import PlanSettings from '../utils/components/plan-settings'
 import { plansSelector } from '../utils/selectors'
@@ -14,16 +16,34 @@ const { __ } = window.i18n['poi-plugin-leveling-plan']
 
 export const LevelingPlanArea = connect(state => ({
   plans: plansSelector(state),
+  serverIp: _.get(state, 'info.server.ip', ''),
 }))(class levelingPlanArea extends Component {
   static propTypes = {
     plans: PropTypes.object,
+    serverIp: PropTypes.string,
   }
 
   state = {
-    activeTab: 0, // 0: Plans, 1: Farming, 2: Settings
+    activeTab: 0, // 0: Plans, 1: Farming, 2: Remodel Costs, 3: Settings
     showPlanForm: false,
     editingPlanId: null,
     planType: 'normal',
+  }
+
+  componentDidMount() {
+    if (this.props.serverIp) {
+      import('../services/useitem-icons').then(({ initUseitemIcons }) => {
+        initUseitemIcons(this.props.serverIp)
+      }).catch(() => {})
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.serverIp && !prevProps.serverIp) {
+      import('../services/useitem-icons').then(({ initUseitemIcons }) => {
+        initUseitemIcons(this.props.serverIp)
+      }).catch(() => {})
+    }
   }
 
   handleTabChange = key => {
@@ -128,7 +148,8 @@ export const LevelingPlanArea = connect(state => ({
                 <Nav className="main-nav" bsStyle="pills" activeKey={activeTab} onSelect={this.handleTabChange}>
                   <NavItem eventKey={0}>{__('Plans')}</NavItem>
                   <NavItem eventKey={1}>{__('Farming')}</NavItem>
-                  <NavItem eventKey={2}>{__('Settings')}</NavItem>
+                  <NavItem eventKey={2}>{__('Remodel Costs')}</NavItem>
+                  <NavItem eventKey={3}>{__('Settings')}</NavItem>
                 </Nav>
                 {activeTab === 0 && (
                   <Button bsStyle="primary" onClick={this.handleAddPlan}>
@@ -159,6 +180,9 @@ export const LevelingPlanArea = connect(state => ({
               />
             )}
             {activeTab === 2 && (
+              <RemodelCosts />
+            )}
+            {activeTab === 3 && (
               <PlanSettings
                 onSave={this.handleSaveSettings}
               />

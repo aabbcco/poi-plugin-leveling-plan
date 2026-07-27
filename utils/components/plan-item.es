@@ -9,7 +9,7 @@ import _ from 'lodash'
 const { __ } = window.i18n['poi-plugin-leveling-plan']
 const { __: __r } = window.i18n.resources
 
-const RemodelCostDisplay = ({ cost, resources, useitems, $useitems }) => {
+export const RemodelCostDisplay = ({ cost, resources, useitems, $useitems }) => {
   if (!cost || (cost.ammo === 0 && cost.steel === 0 && Object.keys(cost.consumable).length === 0)) {
     return <span style={{ opacity: 0.5 }}>{__('No remodel required')}</span>
   }
@@ -41,13 +41,11 @@ const RemodelCostDisplay = ({ cost, resources, useitems, $useitems }) => {
           Object.entries(cost.consumable).map(([itemId, count]) => {
             const shortage = _.get(shortages, ['consumable', itemId, 'gap'], 0)
             const numId = Number(itemId)
-            // 建造资材(2) materialId=4，开发资材(3) materialId=6
-            const isMaterial = numId === 2 || numId === 3
-            const materialId = numId === 2 ? 4 : 6
+            const isMaterial = numId >= 1 && numId <= 4
             return (
               <span key={itemId} style={{ fontSize: '0.85em', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
                 {isMaterial
-                  ? <MaterialIcon materialId={materialId} className="material-icon-sm" />
+                  ? <MaterialIcon materialId={({1:6,2:5,3:7,4:8})[numId]} className="material-icon-sm" />
                   : <UseitemIcon useitemId={numId} className="useitem-icon-sm" />
                 }
                 {count}

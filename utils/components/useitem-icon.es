@@ -4,12 +4,26 @@ import React, { Component } from 'react'
 import { resolve } from 'path'
 import { connect } from 'react-redux'
 import { configSelector } from 'views/utils/selectors'
+import { MaterialIcon } from 'views/components/etc/icon'
 import _ from 'lodash'
 
 const fallback = resolve(__dirname, '../../assets/icon/useitem.svg')
 
-// 有图标文件的 useitem id 集合（75/77/78/94 命名正确，其余 fallback）
-const AVAILABLE_ICONS = new Set([75, 77, 78, 94])
+const PNGS = new Set([75, 77, 78, 94])
+
+const MATERIAL_MAP = {
+  1: 6,
+  2: 5,
+  3: 7,
+  4: 8,
+}
+
+const LABEL_MAP = {
+  58: '図',
+  65: '甲',
+  100: '技',
+  899: '缶',
+}
 
 class StaticUseitemIcon extends Component {
   static propTypes = {
@@ -22,24 +36,80 @@ class StaticUseitemIcon extends Component {
     className: '',
   }
 
-  shouldComponentUpdate = nextProps =>
-    !_.isEqual(nextProps, this.props)
+  shouldComponentUpdate = nextProps => {
+    if (!_.isEqual(nextProps, this.props)) return true
+    const cachedVersion = window.config.get('plugin.poi-plugin-leveling-plan.useitemIconsMeta', 0)
+    if (cachedVersion !== this._spritesheetVersion) {
+      this._spritesheetVersion = cachedVersion
+      return true
+    }
+    return false
+  }
+
+  getSpritesheetSrc = () => {
+    try {
+      return window.config.get('plugin.poi-plugin-leveling-plan.useitemIcons', null)?.[`common_itemicons_id_${this.props.useitemId}`]
+    } catch (e) {
+      return null
+    }
+  }
 
   render() {
     const { useitemId, className, useSVGIcon } = this.props
-    const classNames = classnames(
-      useSVGIcon ? 'svg' : 'png',
-      className
-    )
-    let _src = fallback
+    const classNames = classnames(useSVGIcon ? 'svg' : 'png', className)
 
+    const spritesheetSrc = this.getSpritesheetSrc()
+    if (spritesheetSrc) {
+      return (
+        <img
+          src={spritesheetSrc}
+          alt={`useitem #${useitemId}`}
+          className={classnames(classNames, 'useitem-icon')}
+        />
+      )
+    }
+
+    if (MATERIAL_MAP[useitemId] !== undefined) {
+      return (
+        <MaterialIcon
+          materialId={MATERIAL_MAP[useitemId]}
+          className={className}
+        />
+      )
+    }
+
+    if (LABEL_MAP[useitemId]) {
+      return (
+        <span
+          className={classnames(classNames, 'useitem-icon', 'useitem-label')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 18,
+            height: 18,
+            fontSize: 10,
+            fontWeight: 'bold',
+            color: '#888',
+            border: '1px solid #888',
+            borderRadius: 3,
+            opacity: 0.7,
+          }}
+        >
+          {LABEL_MAP[useitemId]}
+        </span>
+      )
+    }
+
+    let _src = fallback
     try {
-      if (AVAILABLE_ICONS.has(useitemId)) {
+      if (PNGS.has(useitemId)) {
         _src = resolve(__dirname, `../../assets/icon/${useitemId}.png`)
       }
     } catch (e) {
       _src = fallback
     }
+
     return (
       <img
         src={_src}
