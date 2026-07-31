@@ -4,7 +4,6 @@ import { connect } from 'react-redux'
 import { Tag } from '@blueprintjs/core'
 import _ from 'lodash'
 import { activePlanDetailsSelector, $shipsSelector } from '../../utils/selectors'
-import { constSelector } from 'views/utils/selectors'
 import { getRemodelChainForShip, getShipMaterials, parseShipMaterials, addCost, emptyCost } from '../../utils/kaisou-cost'
 import { RemodelCostDisplay } from './plan-item'
 
@@ -47,7 +46,7 @@ function calcPlanRemodelCost(shipMasterId, currentLv, targetLv, $ships) {
 
 class RemodelCosts extends Component {
   render() {
-    const { plans, $ships, resources, useitems, $useitems } = this.props
+    const { plans, $ships, resources, useitems } = this.props
 
     if (!plans || plans.length === 0) {
       return (
@@ -80,7 +79,7 @@ class RemodelCosts extends Component {
           </Panel.Heading>
           <Panel.Body>
             {hasAnyCost ? (
-              <RemodelCostDisplay cost={totalCost} resources={resources} useitems={useitems} $useitems={$useitems} />
+              <RemodelCostDisplay cost={totalCost} resources={resources} useitems={useitems} />
             ) : (
               <span style={{ opacity: 0.5 }}>{__('No remodel required')}</span>
             )}
@@ -98,7 +97,7 @@ class RemodelCosts extends Component {
                   </span>
                 </span>
                 <span style={{ textAlign: 'right' }}>
-                  <RemodelCostDisplay cost={pc.totalCost} resources={resources} useitems={useitems} $useitems={$useitems} />
+                  <RemodelCostDisplay cost={pc.totalCost} resources={resources} useitems={useitems} />
                 </span>
               </div>
             </Panel.Heading>
@@ -122,13 +121,11 @@ class RemodelCosts extends Component {
 }
 
 const mapStateToProps = (state) => {
-  const $const = constSelector(state) || {}
   return {
     plans: activePlanDetailsSelector(state),
     $ships: $shipsSelector(state),
     resources: _.get(state, 'info.resources', []),
     useitems: _.get(state, 'info.useitems', {}),
-    $useitems: _.get($const, '$useitems', {}),
   }
 }
 

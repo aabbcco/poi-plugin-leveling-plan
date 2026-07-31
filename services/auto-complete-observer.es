@@ -58,11 +58,6 @@ function checkAndCompletePlans(changedShips) {
       
       // Check if plan should be auto-completed
       if (shouldAutoComplete(plan, ship)) {
-        console.log(
-          `[LevelingPlan] Auto-completing plan: ${plan.id} ` +
-          `(Ship ${shipId}: Lv.${oldLv} → Lv.${newLv} >= Target Lv.${plan.targetLevel})`
-        )
-        
         // Complete the plan
         try {
           completePlan(plan.id)
@@ -94,7 +89,6 @@ function checkAndCompletePlans(changedShips) {
 function handleShipLevelChange(dispatch, currentLevelMap, previousLevelMap) {
   // Skip initial load (no previous state)
   if (!previousLevelMap || Object.keys(previousLevelMap).length === 0) {
-    console.log('[LevelingPlan] Observer initialized, skipping initial check')
     return
   }
   
@@ -115,13 +109,7 @@ function handleShipLevelChange(dispatch, currentLevelMap, previousLevelMap) {
     }
   })
   
-  if (changedShips.length > 0) {
-    console.log(`[LevelingPlan] Detected ${changedShips.length} ship(s) with level changes:`, 
-      changedShips.map(s => `Ship ${s.shipId}: Lv.${s.oldLv} → Lv.${s.newLv}`).join(', ')
-    )
-    
-    checkAndCompletePlans(changedShips)
-  }
+  if (changedShips.length > 0) checkAndCompletePlans(changedShips)
 }
 
 /**
@@ -162,7 +150,6 @@ export function initAutoCompleteObserver(store = null) {
         const createStoreModule = require('views/create-store')
         if (createStoreModule && createStoreModule.store) {
           reduxStore = createStoreModule.store
-          console.log('[LevelingPlan] Successfully imported store from views/create-store')
         }
       } catch (requireError) {
         console.warn('[LevelingPlan] Cannot require views/create-store:', requireError.message)
@@ -183,8 +170,6 @@ export function initAutoCompleteObserver(store = null) {
     
     // Register the observer
     observe(reduxStore, [shipLevelObserver])
-    
-    console.log('[LevelingPlan] Auto-complete observer initialized successfully')
   } catch (error) {
     console.error('[LevelingPlan] Failed to initialize auto-complete observer:', error)
   }

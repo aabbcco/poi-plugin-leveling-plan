@@ -9,8 +9,6 @@ import _ from 'lodash'
 
 const fallback = resolve(__dirname, '../../assets/icon/useitem.svg')
 
-const PNGS = new Set([75, 77, 78, 94])
-
 const MATERIAL_MAP = {
   1: 6,
   2: 5,
@@ -101,18 +99,9 @@ class StaticUseitemIcon extends Component {
       )
     }
 
-    let _src = fallback
-    try {
-      if (PNGS.has(useitemId)) {
-        _src = resolve(__dirname, `../../assets/icon/${useitemId}.png`)
-      }
-    } catch (e) {
-      _src = fallback
-    }
-
     return (
       <img
-        src={_src}
+        src={fallback}
         alt={`useitem #${useitemId}`}
         className={classnames(classNames, 'useitem-icon')}
       />

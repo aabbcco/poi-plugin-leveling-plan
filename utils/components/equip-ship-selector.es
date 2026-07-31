@@ -245,32 +245,6 @@ class EquipShipSelector extends Component {
 
     return (
       <div className="equip-ship-selector" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <style>{`
-          .equip-ship-selector .equip-icon-wrapper {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden !important;
-          }
-          .equip-ship-selector .equip-icon-wrapper > span,
-          .equip-ship-selector .equip-icon-wrapper > div,
-          .equip-ship-selector .equip-icon-wrapper > img,
-          .equip-ship-selector .equip-icon-wrapper > svg {
-            width: 100% !important;
-            height: 100% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-          }
-          .equip-ship-selector .equip-icon-wrapper img,
-          .equip-ship-selector .equip-icon-wrapper svg {
-            width: 100% !important;
-            height: 100% !important;
-            max-width: 100% !important;
-            max-height: 100% !important;
-            object-fit: contain !important;
-          }
-        `}</style>
         {/* Top: Search + Type Filter */}
         <div style={{ flexShrink: 0, marginBottom: 8 }}>
           <InputGroup

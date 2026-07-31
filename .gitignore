@@ -1,5 +1,10 @@
 node_modules/
-views/*.js
+index.js
+views/**/*.js
+utils/**/*.js
+services/**/*.js
 .idea
 .DS_Store
 *.tgz
+*.zip
+dist/

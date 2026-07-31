@@ -156,22 +156,6 @@
   font-weight: bold;
 }
 
-#leveling-plan .notes-section {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #ddd;
-}
-
-#leveling-plan .notes-label {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-#leveling-plan .notes-content {
-  color: #666;
-  white-space: pre-wrap;
-}
-
 /* Map Selector */
 #leveling-plan .map-selector {
   display: inline-block;
@@ -337,13 +321,6 @@
   font-size: 12px;
 }
 
-#leveling-plan .quick-select-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 15px;
-}
-
 #leveling-plan .map-selector .bp5-menu {
   max-height: 300px;
   overflow-y: auto;
@@ -372,34 +349,8 @@
   display: none;
 }
 
-#leveling-plan .map-select-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#leveling-plan .map-select-check {
-  width: 20px;
-}
-
-#leveling-plan .map-select-name {
-  flex: 1;
-}
-
-#leveling-plan .map-select-exp {
-  color: #888;
-  font-size: 12px;
-}
-
 .bp5-dark #leveling-plan .map-select-exp {
   color: #999;
-}
-
-#leveling-plan .quick-select-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 15px;
 }
 
 #leveling-plan .map-quick-button {
@@ -610,4 +561,32 @@
   height: 0;
   border-top: 1px solid rgba(128, 128, 128, 0.2);
   margin: 2px 0;
+}
+
+/* Equipment-Ship Selector icon alignment */
+#leveling-plan .equip-ship-selector .equip-icon-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+#leveling-plan .equip-ship-selector .equip-icon-wrapper > span,
+#leveling-plan .equip-ship-selector .equip-icon-wrapper > div,
+#leveling-plan .equip-ship-selector .equip-icon-wrapper > img,
+#leveling-plan .equip-ship-selector .equip-icon-wrapper > svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#leveling-plan .equip-ship-selector .equip-icon-wrapper img,
+#leveling-plan .equip-ship-selector .equip-icon-wrapper svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
 }

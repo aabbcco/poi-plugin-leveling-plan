@@ -3,7 +3,6 @@ import { Nav, NavItem } from 'react-bootstrap'
 import { connect } from 'react-redux'
 import _ from 'lodash'
 import PlanItem from './plan-item'
-import { constSelector } from 'views/utils/selectors'
 import { allPlanDetailsSelector, activePlanDetailsSelector, completedPlanDetailsSelector, $shipsSelector } from '../../utils/selectors'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
@@ -23,7 +22,7 @@ class PlanList extends Component {
 
   render() {
     const { activeTab } = this.state
-    const { allPlans, activePlans, completedPlans, onEdit, onDelete, onComplete, $ships, resources, useitems, $useitems } = this.props
+    const { allPlans, activePlans, completedPlans, onEdit, onDelete, onComplete, $ships, resources, useitems } = this.props
 
     // 根据当前标签页选择要显示的计划
     let displayPlans = []
@@ -67,7 +66,6 @@ class PlanList extends Component {
                 $ships={$ships}
                 resources={resources}
                 useitems={useitems}
-                $useitems={$useitems}
               />
             ))
           )}
@@ -79,7 +77,6 @@ class PlanList extends Component {
 
 // Redux 连接（不处理equips，避免大量计算）
 const mapStateToProps = (state) => {
-  const $const = constSelector(state) || {}
   return {
     allPlans: allPlanDetailsSelector(state),
     activePlans: activePlanDetailsSelector(state),
@@ -87,7 +84,6 @@ const mapStateToProps = (state) => {
     $ships: $shipsSelector(state),
     resources: _.get(state, 'info.resources', []),
     useitems: _.get(state, 'info.useitems', {}),
-    $useitems: _.get($const, '$useitems', {}),
   }
 }
 

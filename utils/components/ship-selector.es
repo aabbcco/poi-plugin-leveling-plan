@@ -2,12 +2,11 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
-import { Button, InputGroup, Tab, Tabs, Classes, Intent } from '@blueprintjs/core'
+import { Button, InputGroup, Tab, Tabs, Classes, Intent, Icon } from '@blueprintjs/core'
 import { Popover } from 'views/components/etc/overlay'
 import classnames from 'classnames'
 import _ from 'lodash'
 import Fuse from 'fuse.js'
-import FA from 'react-fontawesome'
 import styled from 'styled-components'
 import { shipMenuDataSelector, masterShipMenuDataSelector } from '../../utils/selectors'
 import { catMap, searchOptions } from '../../utils/constants'
@@ -123,7 +122,7 @@ class ShipSelectorMenu extends Component {
               onClick={this.handleClear}
               intent={Intent.WARNING}
             >
-              <FA name="times" />
+              <Icon icon="cross" />
             </Button>
           }
         />

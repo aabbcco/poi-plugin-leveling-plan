@@ -244,42 +244,7 @@ export const shipsByTypeSelector = createSelector(
     .value()
 )
 
-// ============ 5. 经验计算辅助函数 ============
-
-// 计算从当前等级到目标等级所需经验
-export const calcExpToLevel = (currentLv, currentExp, targetLv) => {
-  if (targetLv <= currentLv) return 0
-  
-  const currentLevelTotalExp = exp[currentLv] || 0
-  const targetLevelTotalExp = exp[targetLv] || 0
-  
-  // 当前等级已获得的经验
-  const expInCurrentLevel = currentExp - currentLevelTotalExp
-  
-  // 还需要的经验 = 目标等级总经验 - 当前等级总经验 - 当前等级内已获得的经验
-  return targetLevelTotalExp - currentLevelTotalExp - expInCurrentLevel
-}
-
-// 计算出击次数（基于海图经验）
-export const calcSortieCount = (requiredExp, mapExp, resultMultiplier = 1.0, isFlagship = false, isMVP = false) => {
-  if (mapExp <= 0) return 0
-  
-  let expPerSortie = mapExp * resultMultiplier
-  
-  // 旗舰加成
-  if (isFlagship) {
-    expPerSortie *= 1.5
-  }
-  
-  // MVP加成
-  if (isMVP) {
-    expPerSortie *= 2
-  }
-  
-  return Math.ceil(requiredExp / expPerSortie)
-}
-
-// ============ 6. 个人统计数据 Selectors ============
+// ============ 5. 个人统计数据 Selectors ============
 
 // 个人统计数据 selector
 export const personalStatsSelector = createSelector(
@@ -287,7 +252,7 @@ export const personalStatsSelector = createSelector(
   config => _.get(config, KEY_STATS, {})
 )
 
-// ============ 7. 练级计划 Selectors ============
+// ============ 6. 练级计划 Selectors ============
 
 // 所有计划（字典）
 export const plansSelector = createSelector(

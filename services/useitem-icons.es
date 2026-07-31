@@ -50,7 +50,6 @@ export async function initUseitemIcons(serverIp) {
     const icons = await fetchAndUnpack(serverIp)
     window.config.set(CONFIG_KEY, icons)
     window.config.set(META_KEY, Date.now())
-    console.log(`[LevelingPlan] Useitem icons loaded: ${Object.keys(icons).length} frames`)
   } catch (e) {
     console.error('[LevelingPlan] Failed to init useitem icons:', e)
   }

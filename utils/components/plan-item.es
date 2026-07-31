@@ -1,15 +1,14 @@
 import React from 'react'
 import { Panel, Button, ProgressBar } from 'react-bootstrap'
 import { Tag } from '@blueprintjs/core'
-import { MaterialIcon, SlotitemIcon } from 'views/components/etc/icon'
+import { MaterialIcon } from 'views/components/etc/icon'
 import { UseitemIcon } from './useitem-icon'
 import { getShipRemodelCost, calcAllShortages } from '../../utils/kaisou-cost'
 import _ from 'lodash'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
-const { __: __r } = window.i18n.resources
 
-export const RemodelCostDisplay = ({ cost, resources, useitems, $useitems }) => {
+export const RemodelCostDisplay = ({ cost, resources, useitems }) => {
   if (!cost || (cost.ammo === 0 && cost.steel === 0 && Object.keys(cost.consumable).length === 0)) {
     return <span style={{ opacity: 0.5 }}>{__('No remodel required')}</span>
   }
@@ -62,7 +61,7 @@ export const RemodelCostDisplay = ({ cost, resources, useitems, $useitems }) => 
 }
 
 // 单个计划卡片组件
-export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, resources, useitems, $useitems }) => {
+export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, resources, useitems }) => {
   if (!planDetail) return null
 
   const {
@@ -95,7 +94,7 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
               Lv.{startLv==undefined?currentLv:startLv} → Lv.{targetLv}
             </span>
             {completed && (
-              <span className="completed-badge">{__(completed ? 'Completed' : '')}</span>
+              <span className="completed-badge">{__('Completed')}</span>
             )}
           </div>
           <div className="plan-item-actions">
@@ -130,7 +129,7 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
               {__('Required EXP')}: {requiredExp.toLocaleString()}
               {remodelCost && (
                 <span style={{ marginLeft: 15 }}>
-                  <RemodelCostDisplay cost={remodelCost} resources={resources} useitems={useitems} $useitems={$useitems} />
+                  <RemodelCostDisplay cost={remodelCost} resources={resources} useitems={useitems} />
                 </span>
               )}
             </div>

@@ -164,7 +164,6 @@ class PlanForm extends Component {
     }
 
     const validation = validatePlan(plan, ship)
-    console.log(plan)
     if (!validation.valid) {
       this.setState({ errors: validation.errors })
       return

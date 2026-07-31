@@ -1,6 +1,6 @@
 {
   "name": "poi-plugin-leveling-plan",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Leveling plan plugin for poi",
   "main": "index.js",
   "keywords": [
@@ -41,14 +41,14 @@
     "postpack": "npm run clean:js",
     "prepublishOnly": "npm run build",
     "test": "echo \"Warning: no test specified\"",
-    "clean:js": "find ./views -name '*.js' -type f -delete && find ./utils -name '*.js' -type f -delete && find ./services -name '*.js' -type f -delete && rm -f ./index.js",
-    "build": "npm run build:transpile && npm run build:dist",
+    "clean:js": "node scripts/clean-js.js",
+    "build": "poi-util-transpile && node scripts/build.js && node scripts/clean-js.js",
     "build:transpile": "poi-util-transpile",
     "build:dist": "node scripts/build.js",
-    "build:npm": "npm pack",
+    "build:npm": "npm pack ./dist",
     "build:zip": "node scripts/create-zip.js",
     "build:all": "npm run build && npm run build:npm && npm run build:zip",
-    "clean": "npm run clean:js && rm -rf dist *.tgz *.zip"
+    "clean": "node scripts/clean-js.js --all"
   },
   "peerDependencies": {
     "@blueprintjs/core": "^5.7.0",
@@ -56,7 +56,6 @@
     "fuse.js": "^6.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-fontawesome": "^1.7.1",
     "react-redux": "^8.0.0",
     "redux": "^4.0.0",
     "redux-observers": "^2.1.1",

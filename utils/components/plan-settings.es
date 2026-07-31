@@ -59,66 +59,16 @@ const MapExperienceOverview = ({ personalStats }) => {
   )
 }
 
-// 装备数据同步面板
-const EquipSyncPanel = ({ meta: propsMeta }) => {
-  const [syncing, setSyncing] = React.useState(false)
-  const [meta, setMeta] = React.useState(propsMeta)
-  const [result, setResult] = React.useState(null)
-
-  React.useEffect(() => {
-    setMeta(propsMeta)
-  }, [propsMeta])
-
-  const handleSync = async () => {
-    setSyncing(true)
-    setResult(null)
-    try {
-      const { manualSync } = await import('../../services/equip-sync-service')
-      const res = await manualSync()
-      setResult(res)
-      if (res.success && res.meta) {
-        setMeta(res.meta)
-      }
-    } catch (e) {
-      setResult({ success: false, error: e.message })
-    }
-    setSyncing(false)
+const formatTime = (ts) => {
+  if (!ts) return __('No data yet')
+  try {
+    return new Date(ts).toLocaleString()
+  } catch (e) {
+    return ts
   }
-
-  const formatTime = (ts) => {
-    if (!ts) return __('No data yet')
-    try {
-      return new Date(ts).toLocaleString()
-    } catch (e) {
-      return ts
-    }
-  }
-
-  return (
-    <div>
-      <p>{__('Last sync')}: {formatTime(meta ? meta.updated_at : null)}</p>
-      <p>{__('Equipment entries')}: {meta && meta.equip_count ? meta.equip_count : '-'}</p>
-      <p>{__('Ship entries')}: {meta && meta.ship_entry_count ? meta.ship_entry_count : '-'}</p>
-      <div className="settings-actions">
-        <Button bsStyle="primary" onClick={handleSync} disabled={syncing}>
-          {syncing ? __('Syncing...') : __('Sync Now')}
-        </Button>
-      </div>
-      {result && result.success && result.unchanged && (
-        <p className="text-success" style={{ marginTop: 6 }}>{__('Already up to date')}</p>
-      )}
-      {result && result.success && !result.unchanged && (
-        <p className="text-success" style={{ marginTop: 6 }}>{__('Sync completed')}</p>
-      )}
-      {result && !result.success && (
-        <p className="text-danger" style={{ marginTop: 6 }}>{__('Sync failed')}: {result.error}</p>
-      )}
-    </div>
-  )
 }
 
-// 改造消耗数据同步面板
-const KaisouSyncPanel = ({ meta: propsMeta }) => {
+const SyncPanel = ({ meta: propsMeta, syncFnName, stats, extraInfo }) => {
   const [syncing, setSyncing] = React.useState(false)
   const [meta, setMeta] = React.useState(propsMeta)
   const [result, setResult] = React.useState(null)
@@ -131,8 +81,8 @@ const KaisouSyncPanel = ({ meta: propsMeta }) => {
     setSyncing(true)
     setResult(null)
     try {
-      const { manualKaisouSync } = await import('../../services/kaisou-sync-service')
-      const res = await manualKaisouSync()
+      const mod = await import('../../services/sync-service')
+      const res = await mod[syncFnName]()
       setResult(res)
       if (res.success && res.meta) {
         setMeta(res.meta)
@@ -143,19 +93,13 @@ const KaisouSyncPanel = ({ meta: propsMeta }) => {
     setSyncing(false)
   }
 
-  const formatTime = (ts) => {
-    if (!ts) return __('No data yet')
-    try {
-      return new Date(ts).toLocaleString()
-    } catch (e) {
-      return ts
-    }
-  }
-
   return (
     <div>
       <p>{__('Last sync')}: {formatTime(meta ? meta.updated_at : null)}</p>
-      <p>{__('Ship remodel entries')}: {meta && meta.kaisou_count ? meta.kaisou_count : '-'}</p>
+      {stats.map(({ label, key }) => (
+        <p key={key}>{label}: {meta && meta[key] ? meta[key] : '-'}</p>
+      ))}
+      {extraInfo}
       <div className="settings-actions">
         <Button bsStyle="primary" onClick={handleSync} disabled={syncing}>
           {syncing ? __('Syncing...') : __('Sync Now')}
@@ -305,7 +249,14 @@ class PlanSettings extends Component {
           <Panel.Title>{__('Equipment-Ship Data Sync')}</Panel.Title>
         </Panel.Heading>
         <Panel.Body>
-          <EquipSyncPanel meta={equipSyncMeta} />
+          <SyncPanel
+            meta={equipSyncMeta}
+            syncFnName="manualEquipSync"
+            stats={[
+              { label: __('Equipment entries'), key: 'equip_count' },
+              { label: __('Ship entries'), key: 'ship_entry_count' },
+            ]}
+          />
         </Panel.Body>
       </Panel>
       {/* 改造消耗数据同步 */}
@@ -314,7 +265,13 @@ class PlanSettings extends Component {
           <Panel.Title>{__('Kaisou Materials Sync')}</Panel.Title>
         </Panel.Heading>
         <Panel.Body>
-          <KaisouSyncPanel meta={kaisouSyncMeta} />
+          <SyncPanel
+            meta={kaisouSyncMeta}
+            syncFnName="manualKaisouSync"
+            stats={[
+              { label: __('Ship remodel entries'), key: 'kaisou_count' },
+            ]}
+          />
         </Panel.Body>
       </Panel>
       </>
