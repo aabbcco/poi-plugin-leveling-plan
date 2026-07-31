@@ -4,10 +4,9 @@ import {
   constSelector,
   shipsSelector,
   basicSelector,
-  shipDataSelectorFactory,
 } from 'views/utils/selectors'
 import { exp, MAX_LEVEL, EXP_BY_POI_DB } from './constants'
-import { getMapExp, getMapExpBatch, calcBattleExp, calcSortiesNeeded } from './exp-calculator'
+import { getMapExp, calcBattleExp } from './exp-calculator'
 import { calcPlanDetail, formatMapName } from './plan-helpers'
 import { KEY_PLANS, KEY_SETTINGS, KEY_STATS } from './config-helper'
 import { getFarmingMap, composeEquipmentList } from './equip-provider'
@@ -191,12 +190,6 @@ export const remodelLevelSelector = createSelector(
 
 // ============ 3. 经验数据 Selectors ============
 
-// 等级经验表
-export const expTableSelector = () => exp
-
-// 海图经验数据
-export const mapExpSelector = () => EXP_BY_POI_DB
-
 // 海图列表（带经验值）
 export const mapsWithExpSelector = createSelector(
   [$mapsSelector],
@@ -296,25 +289,6 @@ export const completedPlansSelector = createSelector(
   [normalPlansArraySelector],
   plans => plans.filter(plan => plan.completed)
 )
-
-// // 根据计划ID获取计划详情（带计算数据）
-// export const planDetailSelectorFactory = planId => createSelector(
-//   [plansSelector, ourShipsSelector, $shipsSelector, personalStatsSelector, planSettingsSelector],
-//   (plans, ships, $ships, personalStats, settings) => {
-//     const plan = plans[planId]
-//     if (!plan) return null
-    
-//     // 查找对应的舰娘实例
-//     const ship = _.find(ships, s => s.api_id === plan.shipId)
-//     if (!ship) return null
-    
-//     // 查找舰娘图鉴数据
-//     const $ship = $ships[plan.shipMasterId]
-//     if (!$ship) return null
-    
-//     return calcPlanDetail(plan, ship, $ship, personalStats, settings)
-//   }
-// )
 
 // 根据舰娘ID查找计划
 export const planByShipIdSelectorFactory = shipId => createSelector(
@@ -461,15 +435,49 @@ export const farmingPlansSelector = createSelector(
     .value()
 )
 
+// 改造链起点 → 实例列表（倒排索引）
+export const instancesByUniqueIdSelector = createSelector(
+  [ourShipsSelector, shipUniqueMapSelector],
+  (ourShips, shipUniqueMap) => {
+    const index = {}
+    Object.values(ourShips).forEach(ship => {
+      const uniqueId = shipUniqueMap[ship.api_ship_id]
+      if (uniqueId === undefined) return
+      if (!index[uniqueId]) index[uniqueId] = []
+      index[uniqueId].push(ship)
+    })
+    return index
+  }
+)
+
 // 养殖计划详情
 export const farmingPlanDetailsSelector = createSelector(
-  [farmingPlansSelector, ourShipsSelector, $shipsSelector, personalStatsSelector, planSettingsSelector, shipUniqueMapSelector],
-  (plans, ourShips, $ships, personalStats, settings, shipUniqueMap) => {
+  [
+    farmingPlansSelector,
+    $shipsSelector,
+    personalStatsSelector,
+    planSettingsSelector,
+    instancesByUniqueIdSelector,
+  ],
+  (plans, $ships, personalStats, settings, instancesByUniqueId) => {
     const {
       defaultRank = 0,
       defaultIsFlagship = true,
       defaultIsMVP = false,
     } = settings
+
+    // 单次执行内缓存海图经验，避免每个实例重复计算
+    const mapExpCache = {}
+    const getCachedMapExp = mapId => {
+      if (!mapExpCache[mapId]) {
+        const mapExpData = getMapExp(mapId, personalStats, 30)
+        mapExpCache[mapId] = {
+          ...mapExpData,
+          expPerSortie: calcBattleExp(mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP),
+        }
+      }
+      return mapExpCache[mapId]
+    }
 
     return plans.map(plan => {
       try {
@@ -483,12 +491,9 @@ export const farmingPlanDetailsSelector = createSelector(
 
           const targetLv = targetLevel
 
-          const instances = _(ourShips)
+          const instances = _(instancesByUniqueId[shipUniqueId] || [])
+            .filter(ship => ship.api_lv < targetLv)
             .map(ship => {
-              const instanceUniqueId = shipUniqueMap[ship.api_ship_id]
-              if (instanceUniqueId !== shipUniqueId) return null
-              if (ship.api_lv >= targetLv) return null
-
               const currentLv = ship.api_lv
               const currentExp = ship.api_exp?.[0] || 0
               const targetTotalExp = exp[targetLv] || 0
@@ -498,16 +503,17 @@ export const farmingPlanDetailsSelector = createSelector(
                 : 0
 
               const mapDetails = (plan.maps || []).map(mapId => {
-                const mapExpData = getMapExp(mapId, personalStats, 30)
-                const expPerSortie = calcBattleExp(mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP)
-                const sortiesNeeded = calcSortiesNeeded(requiredExp, mapExpData.exp, defaultRank, defaultIsFlagship, defaultIsMVP)
+                const cached = getCachedMapExp(mapId)
+                const sortiesNeeded = cached.expPerSortie > 0
+                  ? Math.ceil(requiredExp / cached.expPerSortie)
+                  : 0
                 return {
                   mapId,
                   mapName: formatMapName(mapId),
-                  mapExp: mapExpData.exp,
-                  mapExpSource: mapExpData.source,
-                  mapExpCount: mapExpData.count,
-                  expPerSortie,
+                  mapExp: cached.exp,
+                  mapExpSource: cached.source,
+                  mapExpCount: cached.count,
+                  expPerSortie: cached.expPerSortie,
                   sortiesNeeded,
                 }
               })
@@ -521,13 +527,10 @@ export const farmingPlanDetailsSelector = createSelector(
                 mapDetails,
               }
             })
-            .filter(Boolean)
             .orderBy(['currentLv'], ['desc'])
             .value()
 
-          const totalInstancesOwned = _(ourShips)
-            .filter(s => shipUniqueMap[s.api_ship_id] === shipUniqueId)
-            .size()
+          const totalInstancesOwned = (instancesByUniqueId[shipUniqueId] || []).length
 
           return {
             shipMasterId,
@@ -565,5 +568,3 @@ export const farmingPlanDetailsSelector = createSelector(
     }).filter(Boolean)
   }
 )
-
-

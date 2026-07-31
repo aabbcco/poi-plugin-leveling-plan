@@ -11,7 +11,7 @@ import { EXP_BY_POI_DB, expPercent } from './constants'
 export const calcBattleExp = (mapBaseExp, rank = 0, isFlagship = false, isMVP = false) => {
   if (!mapBaseExp || mapBaseExp <= 0) return 0
 
-  // 基础经验 = 海图经验 × 战斗结果加成
+  // 与 poi-plugin-exp-calc 一致：加成合并后统一向下取整
   let exp = mapBaseExp * (expPercent[rank] || 1.0)
 
   // 旗舰加成 1.5倍
@@ -76,20 +76,6 @@ export const getMapExp = (mapId, personalStats = {}, minSamples = 30) => {
     source: 'poi-db',
     count: personalStat ? personalStat.count : 0,
   }
-}
-
-/**
- * 批量获取多个海图的经验值
- * @param {array} mapIds - 海图ID数组
- * @param {object} personalStats - 个人统计数据
- * @param {number} minSamples - 最小样本数
- * @returns {object} { '11': { exp: 35, source: 'personal', count: 50 }, ... }
- */
-export const getMapExpBatch = (mapIds, personalStats = {}, minSamples = 30) => {
-  return mapIds.reduce((result, mapId) => {
-    result[mapId] = getMapExp(mapId, personalStats, minSamples)
-    return result
-  }, {})
 }
 
 /**
