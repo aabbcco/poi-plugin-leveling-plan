@@ -5,6 +5,7 @@ import { Card, Button, InputGroup, Tag, Collapse, Classes } from '@blueprintjs/c
 import { SlotitemIcon } from 'views/components/etc/icon'
 import Fuse from 'fuse.js'
 import { equipListSelector, $equipTypesSelector, $shipsSelector } from '../../utils/selectors'
+import { MAX_LEVEL } from '../../utils/constants'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
 
@@ -171,7 +172,7 @@ class EquipShipSelector extends Component {
   handleApplyBatchLevel = () => {
     const { batchLevel, targets } = this.state
     const level = parseInt(batchLevel, 10)
-    if (isNaN(level) || level < 1 || level > 185) {
+    if (isNaN(level) || level < 1 || level > MAX_LEVEL) {
       this.setState({ batchLevel: '' })
       return
     }
@@ -371,7 +372,7 @@ class EquipShipSelector extends Component {
                                   onChange={(e) => this.handleTargetLevelChange(s.shipId, e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
                                   min={1}
-                                  max={185}
+                                  max={MAX_LEVEL}
                                   style={{
                                     width: 50,
                                     height: 22,
@@ -416,7 +417,7 @@ class EquipShipSelector extends Component {
                 onChange={this.handleBatchLevelChange}
                 placeholder={__('Target Level')}
                 min={1}
-                max={185}
+                max={MAX_LEVEL}
                 style={{
                   width: 60,
                   height: 24,

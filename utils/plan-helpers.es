@@ -1,4 +1,4 @@
-import { exp as expTable } from './constants'
+import { exp as expTable, MAX_LEVEL } from './constants'
 import { calcExpToLevel, calcBattleExp, calcSortiesNeeded, getMapExp } from './exp-calculator'
 
 /**
@@ -27,8 +27,8 @@ export const validatePlan = (plan, ship = null) => {
       if (!t.shipMasterId) {
         errors.push(`targets[${i}]: shipMasterId is required`)
       }
-      if (!t.targetLevel || t.targetLevel < 1 || t.targetLevel > 185) {
-        errors.push(`targets[${i}]: targetLevel must be between 1 and 185`)
+      if (!t.targetLevel || t.targetLevel < 1 || t.targetLevel > MAX_LEVEL) {
+        errors.push(`targets[${i}]: targetLevel must be between 1 and ${MAX_LEVEL}`)
       }
     })
   } else {
@@ -40,8 +40,8 @@ export const validatePlan = (plan, ship = null) => {
       errors.push('shipMasterId is required')
     }
 
-    if (!plan.targetLevel || plan.targetLevel < 1 || plan.targetLevel > 185) {
-      errors.push('targetLevel must be between 1 and 185')
+    if (!plan.targetLevel || plan.targetLevel < 1 || plan.targetLevel > MAX_LEVEL) {
+      errors.push(`targetLevel must be between 1 and ${MAX_LEVEL}`)
     }
 
     if (!isFarming && ship && plan.targetLevel <= ship.api_lv) {

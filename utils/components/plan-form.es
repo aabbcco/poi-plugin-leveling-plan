@@ -9,6 +9,7 @@ import EquipShipSelector from './equip-ship-selector'
 import { ourShipsSelector, $shipsSelector, plansSelector } from '../../utils/selectors'
 import { createPlan, updatePlan, validatePlan } from '../../utils/plan-helpers'
 import { getRemodelLevelsForShip } from '../../utils/kaisou-cost'
+import { MAX_LEVEL } from '../../utils/constants'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
 
@@ -257,7 +258,7 @@ class PlanForm extends Component {
                 value={startLevel}
                 onChange={this.handleStarttLevelChange}
                 min={currentLevel + 1}
-                max={185}
+                max={MAX_LEVEL}
                 placeholder={__('Enter Start level')}
               />
             </FormGroup>
@@ -271,7 +272,7 @@ class PlanForm extends Component {
                 value={targetLevel}
                 onChange={this.handleTargetLevelChange}
                 min={currentLevel + 1}
-                max={185}
+                max={MAX_LEVEL}
                 placeholder={__('Enter target level')}
               />
               {(() => {
