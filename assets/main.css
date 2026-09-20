@@ -178,12 +178,12 @@
   border-color: #137cbd;
 }
 
-.bp5-dark #leveling-plan .map-selector-trigger {
+.bp6-dark #leveling-plan .map-selector-trigger {
   background: #30404d;
   border-color: #5f6b7c;
 }
 
-.bp5-dark #leveling-plan .map-selector-trigger:hover {
+.bp6-dark #leveling-plan .map-selector-trigger:hover {
   border-color: #137cbd;
 }
 
@@ -209,7 +209,7 @@
   border-bottom: 1px solid #e5e5e5;
 }
 
-.bp5-dark #leveling-plan .map-selector-popover-header {
+.bp6-dark #leveling-plan .map-selector-popover-header {
   border-bottom-color: #404854;
 }
 
@@ -219,7 +219,7 @@
   color: #333;
 }
 
-.bp5-dark #leveling-plan .map-selector-popover-title {
+.bp6-dark #leveling-plan .map-selector-popover-title {
   color: #ddd;
 }
 
@@ -273,30 +273,30 @@
   margin-bottom: 15px;
 }
 
-.bp5-dark #leveling-plan .map-selector-dropdown {
+.bp6-dark #leveling-plan .map-selector-dropdown {
   background: #303030;
 }
 
-.bp5-dark #leveling-plan .map-selector-item:hover {
+.bp6-dark #leveling-plan .map-selector-item:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.bp5-dark #leveling-plan .map-selector-item.selected {
+.bp6-dark #leveling-plan .map-selector-item.selected {
   background-color: rgba(79, 172, 254, 0.2);
 }
 
-.bp5-dark #leveling-plan .map-selector-exp {
+.bp6-dark #leveling-plan .map-selector-exp {
   color: #999;
 }
 
-#leveling-plan .map-selector .bp5-popover {
+#leveling-plan .map-selector .bp6-popover {
   position: absolute;
   contain: layout;
   z-index: 1000;
 }
 
-#leveling-plan .map-selector .bp5-popover-content,
-#leveling-plan .map-selector .bp5-menu {
+#leveling-plan .map-selector .bp6-popover-content,
+#leveling-plan .map-selector .bp6-menu {
   max-height: 300px;
   overflow-y: auto;
   position: relative;
@@ -321,7 +321,7 @@
   font-size: 12px;
 }
 
-#leveling-plan .map-selector .bp5-menu {
+#leveling-plan .map-selector .bp6-menu {
   max-height: 300px;
   overflow-y: auto;
 }
@@ -345,11 +345,11 @@
   padding-left: 0;
 }
 
-#leveling-plan .map-selector-popover .bp5-menu-item::before {
+#leveling-plan .map-selector-popover .bp6-menu-item::before {
   display: none;
 }
 
-.bp5-dark #leveling-plan .map-select-exp {
+.bp6-dark #leveling-plan .map-select-exp {
   color: #999;
 }
 
@@ -460,7 +460,7 @@
   z-index: 1;
 }
 
-.bp5-dark #leveling-plan .map-exp-table th {
+.bp6-dark #leveling-plan .map-exp-table th {
   background-color: #303030;
 }
 
@@ -520,28 +520,15 @@
   color: #fff;
 }
 
-.bp5-popover-transition-container{
-  z-index: 11000;
-}
-
-#leveling-plan .map-selector-popover .bp5-menu {
+#leveling-plan .map-selector-popover .bp6-menu {
   max-height: 300px;
   overflow-y: auto;
 }
 
-#leveling-plan .map-selector-popover.bp5-overlay {
+#leveling-plan .map-selector-popover.bp6-overlay {
   position: absolute;
   height: 0;
   overflow: visible;
-}
-
-/* Ship Selector Portal - ensure it appears above modals */
-.ship-selector-portal .bp3-popover {
-  z-index: 10 !important;
-}
-
-.ship-selector-portal .bp3-overlay-backdrop {
-  z-index: 9 !important;
 }
 
 /* Useitem Icon */

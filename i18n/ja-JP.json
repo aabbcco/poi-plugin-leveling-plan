@@ -83,5 +83,17 @@
   "Total Remodel Cost": "改造コスト合計",
   "Kaisou Materials Sync": "改造素材同期",
   "Ship remodel entries": "改造艦船エントリ",
-  "No active plans": "進行中の計画がありません"
+  "No active plans": "進行中の計画がありません",
+  "Plan Completed": "計画完了",
+  "has reached": "に到達",
+  "Select maps": "海域を選択",
+  "Search map": "海域を検索",
+  "No results": "結果なし",
+  "Click to select maps": "クリックして海域を選択",
+  "Start Level": "開始レベル",
+  "Enter Start level": "開始レベルを入力",
+  "No remodel required": "改造不要",
+  "Preset": "プリセット",
+  "Search": "検索",
+  "Failed to delete plan. Please try again.": "計画の削除に失敗しました。もう一度お試しください"
 }

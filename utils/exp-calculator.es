@@ -92,7 +92,8 @@ export const calcExpToLevel = (currentLv, currentExp, targetLv, expTable) => {
   const targetLevelTotalExp = expTable[targetLv] || 0
 
   // 还需要的经验 = 目标等级总经验 - 当前累计经验
-  return targetLevelTotalExp - currentExp
+  // 舰娘累计经验可能已超出目标等级阈值(如 Lv99 存储溢出经验),避免出现负数
+  return Math.max(0, targetLevelTotalExp - currentExp)
 }
 
 /**

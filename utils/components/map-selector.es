@@ -1,10 +1,6 @@
 import React, { Component } from 'react'
 import { Button, InputGroup, MenuItem, Tag, Tab, Tabs, Popover } from '@blueprintjs/core'
-import { connect } from 'react-redux'
-import { createSelector } from 'reselect'
 import { EXP_BY_POI_DB, frequentMaps, WORLD_NAMES } from '../../utils/constants'
-import { personalStatsSelector } from '../../utils/selectors'
-import { getMapExp } from '../../utils/exp-calculator'
 import { formatMapName } from '../../utils/plan-helpers'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
@@ -68,7 +64,7 @@ class MapSelector extends Component {
           <span className="map-selector-popover-title">{__('Select maps')}</span>
           <button
             type="button"
-            className="bp5-button bp5-minimal bp5-small bp5-icon-cross"
+            className="bp6-button bp6-minimal bp6-small bp6-icon-cross"
             onClick={this.closePopover}
           />
         </div>
@@ -196,17 +192,4 @@ class MapSelector extends Component {
   }
 }
 
-const mapStateToProps = createSelector(
-  [personalStatsSelector],
-  (personalStats) => {
-    const allMapIds = Object.keys(EXP_BY_POI_DB)
-    const mapExpData = {}
-    allMapIds.forEach(mapId => {
-      const result = getMapExp(mapId, personalStats, 30)
-      mapExpData[mapId] = result.exp || 0
-    })
-    return { mapExpData }
-  }
-)
-
-export default connect(mapStateToProps)(MapSelector)
+export default MapSelector

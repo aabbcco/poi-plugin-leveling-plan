@@ -15,7 +15,8 @@ const { __ } = window.i18n['poi-plugin-leveling-plan']
 
 // Styled Components
 const Wrapper = styled.div`
-  .bp3-tab-panel {
+  .bp5-tab-panel,
+  .bp6-tab-panel {
     margin-top: 0;
   }
 `
@@ -24,6 +25,7 @@ const ShipList = styled.ul`
   padding: 0;
   margin: 0;
   height: 30em;
+  max-height: calc(100vh - 12em);
   overflow-y: scroll;
   width: 20em;
   
@@ -176,6 +178,7 @@ class ShipSelectorImpl extends Component {
     placeholder: PropTypes.string,
     ships: PropTypes.array.isRequired,
     mode: PropTypes.string,
+    portalContainer: PropTypes.object,
   }
 
   handleSelect = (shipId) => {
@@ -183,7 +186,7 @@ class ShipSelectorImpl extends Component {
   }
 
   render() {
-    const { value, disabled, placeholder, ships, mode } = this.props
+    const { value, disabled, placeholder, ships, mode, portalContainer } = this.props
     const isMaster = mode === 'master'
 
     const selectedShip = value 
@@ -199,7 +202,7 @@ class ShipSelectorImpl extends Component {
         content={<ShipSelectorMenu ships={ships} onSelect={this.handleSelect} mode={mode} />}
         disabled={disabled}
         usePortal={true}
-        portalClassName="ship-selector-portal"
+        portalContainer={portalContainer}
       >
         <Button
           disabled={disabled}

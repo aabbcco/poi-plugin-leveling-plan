@@ -83,5 +83,17 @@
   "Total Remodel Cost": "改造消耗总计",
   "Kaisou Materials Sync": "改造材料同步",
   "Ship remodel entries": "改造舰船条目",
-  "No active plans": "暂无进行中的计划"
+  "No active plans": "暂无进行中的计划",
+  "Plan Completed": "计划完成",
+  "has reached": "已到达",
+  "Select maps": "选择海图",
+  "Search map": "搜索海图",
+  "No results": "无结果",
+  "Click to select maps": "点击选择海图",
+  "Start Level": "起始等级",
+  "Enter Start level": "输入起始等级",
+  "No remodel required": "无需改造",
+  "Preset": "预设",
+  "Search": "搜索",
+  "Failed to delete plan. Please try again.": "删除计划失败，请重试"
 }

@@ -200,7 +200,7 @@ class EquipShipSelector extends Component {
 
     if (!equipList || equipList.length === 0) {
       return (
-        <div className="bp3-text-muted" style={{ padding: 10, textAlign: 'center' }}>
+        <div className="bp6-text-muted" style={{ padding: 10, textAlign: 'center' }}>
           {__('No equipment data. Try syncing in Settings.')}
         </div>
       )
@@ -331,7 +331,7 @@ class EquipShipSelector extends Component {
                       <div style={{ fontSize: '0.75em', opacity: 0.5, marginRight: 4 }}>
                         {eq.ships.length}
                       </div>
-                      <span className={`bp3-icon bp3-icon-chevron-${isExpanded ? 'up' : 'down'}`} />
+                      <span className={`bp6-icon bp6-icon-chevron-${isExpanded ? 'up' : 'down'}`} />
                     </div>
                     <Collapse isOpen={isExpanded}>
                       <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
@@ -393,7 +393,7 @@ class EquipShipSelector extends Component {
             </div>
           ))}
           {sortedTypeIds.length === 0 && (
-            <div className="bp3-text-muted" style={{ textAlign: 'center', padding: 20 }}>
+            <div className="bp6-text-muted" style={{ textAlign: 'center', padding: 20 }}>
               {__('No equipment matches filter.')}
             </div>
           )}

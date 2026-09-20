@@ -5,11 +5,12 @@ import {
   shipsSelector,
   basicSelector,
 } from 'views/utils/selectors'
-import { exp, MAX_LEVEL, EXP_BY_POI_DB } from './constants'
+import { exp, MAX_LEVEL } from './constants'
 import { getMapExp, calcBattleExp } from './exp-calculator'
 import { calcPlanDetail, formatMapName } from './plan-helpers'
 import { KEY_PLANS, KEY_SETTINGS, KEY_STATS } from './config-helper'
 import { getFarmingMap, composeEquipmentList } from './equip-provider'
+import { buildRemodelIndex } from './kaisou-cost'
 
 // ============ 1. 基础数据 Selectors ============
 
@@ -17,12 +18,6 @@ import { getFarmingMap, composeEquipmentList } from './equip-provider'
 export const $shipsSelector = createSelector(
   [constSelector],
   $const => _.get($const, '$ships', {})
-)
-
-// 海图数据
-export const $mapsSelector = createSelector(
-  [constSelector],
-  $const => _.get($const, '$maps', {})
 )
 
 // 装备数据
@@ -90,45 +85,22 @@ export const materialsSelector = createSelector(
 
 // ============ 2. 改造链 Selectors ============
 
-// 改造前置舰船映射（用于找到改造链的起点）
-const beforeShipMapSelector = createSelector(
+// 全量改造链索引($ships 是稳定引用,索引只构建一次)
+export const remodelIndexSelector = createSelector(
   [$shipsSelector],
-  $ships => _($ships)
-    .filter(ship => +(ship.api_aftershipid || 0) > 0)
-    .map(ship => [ship.api_aftershipid, ship.api_id])
-    .fromPairs()
-    .value()
+  $ships => buildRemodelIndex($ships)
 )
 
-// 每艘舰船的改造链（从当前舰船开始，可能不完整）
+// 每艘舰船的改造链（从当前舰船开始）
 const remodelChainsSelector = createSelector(
-  [$shipsSelector],
-  $ships => _($ships)
-    .mapValues(({ api_id: shipId }) => {
-      let current = $ships[shipId]
-      if (!current) return [shipId]
-      
-      let next = +(current.api_aftershipid || 0)
-      let chain = [shipId]
-      
-      // 遍历改造链，直到没有下一个或遇到循环
-      while (!chain.includes(next) && next > 0) {
-        chain = [...chain, next]
-        current = $ships[next] || {}
-        next = +(current.api_aftershipid || 0)
-      }
-      return chain
-    })
-    .value()
+  [remodelIndexSelector],
+  index => index.chains
 )
 
 // 改造链起点舰船ID列表（没有其他舰船改造成它的舰船）
 export const uniqueShipIdsSelector = createSelector(
-  [$shipsSelector, beforeShipMapSelector],
-  ($ships, beforeShipMap) => _($ships)
-    .filter(({ api_id }) => !(api_id in beforeShipMap))
-    .map(({ api_id }) => api_id)
-    .value()
+  [remodelIndexSelector],
+  index => index.uniqueIds
 )
 
 // 舰船ID到改造链起点的映射
@@ -144,68 +116,42 @@ export const shipUniqueMapSelector = createSelector(
     .value()
 )
 
-// 完整的改造链（从起点开始）
-export const adjustedRemodelChainsSelector = createSelector(
-  [uniqueShipIdsSelector, remodelChainsSelector],
-  (uniqueIds, chains) => _(uniqueIds)
-    .map(uniqueId => [uniqueId, chains[uniqueId]])
-    .fromPairs()
-    .value()
-)
-
 // 改造等级链（每艘舰船的改造等级列表）
 export const remodelLevelSelector = createSelector(
-  [$shipsSelector],
-  $ships => _($ships)
-    .filter(ship => typeof ship.api_aftershipid !== 'undefined')
-    .map(ship => {
-      let remodelLvs = [ship.api_afterlv || 0]
-      let nextShipId = +ship.api_aftershipid
-      
-      // 遍历改造链，收集所有改造等级
-      while (nextShipId !== 0 && $ships[nextShipId]) {
-        const nextShip = $ships[nextShipId]
+  [$shipsSelector, remodelChainsSelector],
+  ($ships, chains) => {
+    const levelsMap = {}
+    Object.entries(chains).forEach(([shipId, chain]) => {
+      const baseShip = $ships[shipId]
+      if (!baseShip || typeof baseShip.api_aftershipid === 'undefined') return
+
+      let remodelLvs = [baseShip.api_afterlv || 0]
+      for (let i = 1; i < chain.length; i++) {
+        const nextShip = $ships[chain[i]]
+        if (!nextShip) break
         const nextLv = nextShip.api_afterlv || 0
-        
+
         // 如果下一个改造等级小于等于当前最后一个，说明到达终点
-        if (nextLv <= _.last(remodelLvs)) break
-        
+        if (nextLv <= remodelLvs[remodelLvs.length - 1]) break
+
         remodelLvs = [...remodelLvs, nextLv]
-        nextShipId = +_.get($ships, [nextShipId, 'api_aftershipid'], 0)
       }
-      
+
       // 添加99级和最大等级作为练级目标
-      const lastLv = _.last(remodelLvs) || 0
+      const lastLv = remodelLvs[remodelLvs.length - 1] || 0
       if (lastLv < 100) {
         remodelLvs = [...remodelLvs, 99, MAX_LEVEL]
       } else {
         remodelLvs = [...remodelLvs, MAX_LEVEL]
       }
-      
-      return [ship.api_id, remodelLvs]
+
+      levelsMap[shipId] = remodelLvs
     })
-    .fromPairs()
-    .value()
+    return levelsMap
+  }
 )
 
-// ============ 3. 经验数据 Selectors ============
-
-// 海图列表（带经验值）
-export const mapsWithExpSelector = createSelector(
-  [$mapsSelector],
-  $maps => _($maps)
-    .map(map => {
-      const mapId = `${map.api_maparea_id}${map.api_no}`
-      return {
-        ...map,
-        mapId,
-        baseExp: EXP_BY_POI_DB[mapId] || 0,
-      }
-    })
-    .value()
-)
-
-// ============ 4. 组合数据 Selectors ============
+// ============ 3. 组合数据 Selectors ============
 
 // 舰船完整数据（实例 + 图鉴 + 改造链）
 export const shipsWithDetailsSelector = createSelector(
@@ -221,23 +167,7 @@ export const shipsWithDetailsSelector = createSelector(
   })
 )
 
-// 按舰船ID分组（统计拥有数量）
-export const shipsByIdSelector = createSelector(
-  [ourShipsSelector],
-  ships => _(ships)
-    .groupBy('api_ship_id')
-    .value()
-)
-
-// 按舰种分组
-export const shipsByTypeSelector = createSelector(
-  [ourShipsSelector, $shipsSelector],
-  (ships, $ships) => _(ships)
-    .groupBy(ship => _.get($ships, [ship.api_ship_id, 'api_stype'], 0))
-    .value()
-)
-
-// ============ 5. 个人统计数据 Selectors ============
+// ============ 4. 个人统计数据 Selectors ============
 
 // 个人统计数据 selector
 export const personalStatsSelector = createSelector(
@@ -288,12 +218,6 @@ export const activePlansSelector = createSelector(
 export const completedPlansSelector = createSelector(
   [normalPlansArraySelector],
   plans => plans.filter(plan => plan.completed)
-)
-
-// 根据舰娘ID查找计划
-export const planByShipIdSelectorFactory = shipId => createSelector(
-  [plansArraySelector],
-  plans => plans.find(plan => plan.shipId === shipId && !plan.completed)
 )
 
 // 所有计划的详情（数组）
@@ -376,7 +300,7 @@ export const masterShipMenuDataSelector = createSelector(
         const stype = Number($ship.api_stype)
         if (!stype || stype > 22) return null
         return {
-          api_id: id,
+          api_id: Number(id),
           api_name: $ship.api_name,
           api_yomi: $ship.api_yomi || $ship.api_name,
           api_stype: stype,
@@ -386,12 +310,6 @@ export const masterShipMenuDataSelector = createSelector(
       .sortBy(['api_name'])
       .value()
   }
-)
-
-// 舰船 masterId 到改造链起点的映射缓存
-export const farmingShipLookupSelector = createSelector(
-  [shipUniqueMapSelector],
-  (shipUniqueMap) => shipUniqueMap
 )
 
 // ============ 4. 装备→舰娘映射 Selectors ============
@@ -497,7 +415,7 @@ export const farmingPlanDetailsSelector = createSelector(
               const currentLv = ship.api_lv
               const currentExp = ship.api_exp?.[0] || 0
               const targetTotalExp = exp[targetLv] || 0
-              const requiredExp = targetTotalExp - currentExp
+              const requiredExp = Math.max(0, targetTotalExp - currentExp)
               const progress = targetTotalExp > 0
                 ? Math.min(100.0, 100.0 * (currentExp / targetTotalExp))
                 : 0

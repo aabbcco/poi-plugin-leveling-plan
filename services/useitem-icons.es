@@ -1,6 +1,9 @@
-const CONFIG_KEY = 'plugin.poi-plugin-leveling-plan.useitemIcons'
-const META_KEY = 'plugin.poi-plugin-leveling-plan.useitemIconsMeta'
 const SPRITESHEET_PATH = '/kcs2/img/common/common_itemicons'
+
+let icons = null
+let loadedServerIp = null
+let loadingPromise = null
+let loadingServerIp = null
 
 async function fetchAndUnpack(serverIp) {
   const pngUrl = `http://${serverIp}${SPRITESHEET_PATH}.png`
@@ -40,27 +43,36 @@ async function fetchAndUnpack(serverIp) {
   })
 }
 
-export async function initUseitemIcons(serverIp) {
-  try {
-    if (!serverIp) return
+export function initUseitemIcons(serverIp) {
+  if (!serverIp) return Promise.resolve(null)
 
-    const cached = window.config.get(CONFIG_KEY, null)
-    if (cached) return
+  if (icons && loadedServerIp === serverIp) return Promise.resolve(icons)
+  if (loadingPromise && loadingServerIp === serverIp) return loadingPromise
 
-    const icons = await fetchAndUnpack(serverIp)
-    window.config.set(CONFIG_KEY, icons)
-    window.config.set(META_KEY, Date.now())
-  } catch (e) {
-    console.error('[LevelingPlan] Failed to init useitem icons:', e)
-  }
+  loadingServerIp = serverIp
+  loadingPromise = fetchAndUnpack(serverIp)
+    .then(nextIcons => {
+      if (loadingServerIp === serverIp) {
+        icons = nextIcons
+        loadedServerIp = serverIp
+      }
+      return nextIcons
+    })
+    .catch(e => {
+      console.error('[LevelingPlan] Failed to init useitem icons:', e)
+      return null
+    })
+    .finally(() => {
+      if (loadingServerIp === serverIp) {
+        loadingPromise = null
+        loadingServerIp = null
+      }
+    })
+
+  return loadingPromise
 }
 
 export function getUseitemIcon(itemId) {
-  try {
-    const icons = window.config.get(CONFIG_KEY, null)
-    if (!icons) return null
-    return icons[`common_itemicons_id_${itemId}`] || null
-  } catch (e) {
-    return null
-  }
+  if (!icons) return null
+  return icons[`common_itemicons_id_${itemId}`] || null
 }

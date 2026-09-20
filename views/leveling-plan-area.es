@@ -16,11 +16,9 @@ const { __ } = window.i18n['poi-plugin-leveling-plan']
 
 export const LevelingPlanArea = connect(state => ({
   plans: plansSelector(state),
-  serverIp: _.get(state, 'info.server.ip', ''),
 }))(class levelingPlanArea extends Component {
   static propTypes = {
     plans: PropTypes.object,
-    serverIp: PropTypes.string,
   }
 
   state = {
@@ -28,22 +26,6 @@ export const LevelingPlanArea = connect(state => ({
     showPlanForm: false,
     editingPlanId: null,
     planType: 'normal',
-  }
-
-  componentDidMount() {
-    if (this.props.serverIp) {
-      import('../services/useitem-icons').then(({ initUseitemIcons }) => {
-        initUseitemIcons(this.props.serverIp)
-      }).catch(() => {})
-    }
-  }
-
-  componentDidUpdate(prevProps) {
-    if (this.props.serverIp && !prevProps.serverIp) {
-      import('../services/useitem-icons').then(({ initUseitemIcons }) => {
-        initUseitemIcons(this.props.serverIp)
-      }).catch(() => {})
-    }
   }
 
   handleTabChange = key => {

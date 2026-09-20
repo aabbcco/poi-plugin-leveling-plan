@@ -3,9 +3,9 @@ import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import { resolve } from 'path'
 import { connect } from 'react-redux'
-import { configSelector } from 'views/utils/selectors'
 import { MaterialIcon } from 'views/components/etc/icon'
 import _ from 'lodash'
+import { getUseitemIcon, initUseitemIcons } from '../../services/useitem-icons'
 
 const fallback = resolve(__dirname, '../../assets/icon/useitem.svg')
 
@@ -27,42 +27,59 @@ class StaticUseitemIcon extends Component {
   static propTypes = {
     useitemId: PropTypes.number.isRequired,
     className: PropTypes.string,
-    useSVGIcon: PropTypes.bool.isRequired,
+    serverIp: PropTypes.string,
   }
 
   static defaultProps = {
     className: '',
   }
 
-  shouldComponentUpdate = nextProps => {
-    if (!_.isEqual(nextProps, this.props)) return true
-    const cachedVersion = window.config.get('plugin.poi-plugin-leveling-plan.useitemIconsMeta', 0)
-    if (cachedVersion !== this._spritesheetVersion) {
-      this._spritesheetVersion = cachedVersion
-      return true
+  state = {
+    spritesheetLoaded: false,
+  }
+
+  componentDidMount() {
+    this.loadSpritesheet()
+  }
+
+  componentDidUpdate(prevProps) {
+    if (!_.isEqual(prevProps, this.props)) {
+      this.loadSpritesheet()
     }
-    return false
+  }
+
+  componentWillUnmount() {
+    this.unmounted = true
+  }
+
+  loadSpritesheet = () => {
+    const { serverIp } = this.props
+    if (!serverIp || MATERIAL_MAP[this.props.useitemId] !== undefined) return
+
+    const loadKey = `${serverIp}:${this.props.useitemId}`
+    if (this.loadKey === loadKey) return
+    this.loadKey = loadKey
+
+    initUseitemIcons(serverIp).then(() => {
+      if (!this.unmounted && this.loadKey === loadKey) {
+        this.setState({ spritesheetLoaded: true })
+      }
+    })
   }
 
   getSpritesheetSrc = () => {
-    try {
-      return window.config.get('plugin.poi-plugin-leveling-plan.useitemIcons', null)?.[`common_itemicons_id_${this.props.useitemId}`]
-    } catch (e) {
-      return null
-    }
+    return getUseitemIcon(this.props.useitemId)
   }
 
   render() {
-    const { useitemId, className, useSVGIcon } = this.props
-    const classNames = classnames(useSVGIcon ? 'svg' : 'png', className)
-
+    const { useitemId, className } = this.props
     const spritesheetSrc = this.getSpritesheetSrc()
     if (spritesheetSrc) {
       return (
         <img
           src={spritesheetSrc}
           alt={`useitem #${useitemId}`}
-          className={classnames(classNames, 'useitem-icon')}
+          className={classnames('png', className, 'useitem-icon')}
         />
       )
     }
@@ -79,7 +96,7 @@ class StaticUseitemIcon extends Component {
     if (LABEL_MAP[useitemId]) {
       return (
         <span
-          className={classnames(classNames, 'useitem-icon', 'useitem-label')}
+          className={classnames('png', className, 'useitem-icon', 'useitem-label')}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -103,7 +120,7 @@ class StaticUseitemIcon extends Component {
       <img
         src={fallback}
         alt={`useitem #${useitemId}`}
-        className={classnames(classNames, 'useitem-icon')}
+        className={classnames('svg', className, 'useitem-icon')}
       />
     )
   }
@@ -111,7 +128,7 @@ class StaticUseitemIcon extends Component {
 
 const UseitemIcon = connect(
   state => ({
-    useSVGIcon: _.get(configSelector(state), 'poi.useSVGIcon'),
+    serverIp: _.get(state, 'info.server.ip', ''),
   })
 )(StaticUseitemIcon)
 

@@ -12,8 +12,6 @@ const getDataVersion = () => {
     return 'bundled'
   }
 }
-let cachedParentMap = {}
-
 const findRoot = (id, parentMap) => {
   let curr = id
   let steps = 0
@@ -53,8 +51,6 @@ export function getFarmingMap($ships) {
       nameToId[s.api_name] = s.api_id
     }
   })
-
-  cachedParentMap = parentMap
 
   const activeData = loadSyncedData() || initialEquipData
   const map = {}

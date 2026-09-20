@@ -166,6 +166,43 @@ export const getRemodelLevelsForShip = (shipMasterId, $ships) => {
   return [...levels, maxLvl]
 }
 
+/**
+ * 一次性构建全量改造链索引,供 selectors 与各消费方共享
+ * @param {object} $ships - 舰船图鉴数据 { api_id: ship }
+ * @returns {object} { parentMap, chains, uniqueIds }
+ *  - parentMap: 改造后舰ID → 改造前舰ID(前驱映射)
+ *  - chains:    舰ID → 从该舰向后的完整改造链
+ *  - uniqueIds: 链头(基础形态)ID 列表,即没有其他舰船改造成它的舰船
+ */
+export const buildRemodelIndex = ($ships) => {
+  const parentMap = {}
+  const chains = {}
+  const uniqueIds = []
+
+  if (!$ships || typeof $ships !== 'object') {
+    return { parentMap, chains, uniqueIds }
+  }
+
+  Object.values($ships).forEach(ship => {
+    const afterId = +(ship?.api_aftershipid || 0)
+    if (afterId > 0 && parentMap[afterId] === undefined) {
+      parentMap[afterId] = ship.api_id
+    }
+  })
+
+  Object.keys($ships).forEach(id => {
+    chains[id] = getRemodelChainForShip(id, $ships)
+  })
+
+  Object.keys($ships).forEach(id => {
+    if (parentMap[id] === undefined) {
+      uniqueIds.push(id)
+    }
+  })
+
+  return { parentMap, chains, uniqueIds }
+}
+
 export const countRemodelNodesInRange = (shipMasterId, fromLevel, toLevel, $ships) => {
   if (fromLevel >= toLevel) return 0
 
@@ -179,24 +216,21 @@ export const getShipRemodelCost = (shipMasterId, fromLevel, toLevel, $ships) => 
   if (!shipMasterId || fromLevel >= toLevel) return emptyCost()
 
   const chain = getRemodelChainForShip(shipMasterId, $ships)
-  const levels = getRemodelLevelsForShip(shipMasterId, $ships)
-
-  if (levels.length === 0) return emptyCost()
+  if (chain.length < 2) return emptyCost()
 
   let totalCost = emptyCost()
 
-  // 遍历改造等级，找出需要改造的节点
-  for (let i = 0; i < levels.length; i++) {
-    const targetLv = levels[i]
-    if (targetLv <= fromLevel || targetLv > toLevel) continue
-
-    // 改造前的舰船是 chain[i]
+  // 沿改造链向后遍历相邻对 [chain[i] → chain[i+1]]
+  // 改造等级取改造前形态的 api_afterlv,消耗材料也按改造前形态计
+  for (let i = 0; i < chain.length - 1; i++) {
     const shipIdBeforeRemodel = chain[i]
-    const materials = getShipMaterials(shipIdBeforeRemodel)
+    const level = +($ships[shipIdBeforeRemodel]?.api_afterlv || 0)
+    if (level <= 0 || level >= 200) continue
+    if (level <= fromLevel || level > toLevel) continue
 
+    const materials = getShipMaterials(shipIdBeforeRemodel)
     if (materials) {
-      const parsed = parseShipMaterials(materials)
-      totalCost = addCost(totalCost, parsed)
+      totalCost = addCost(totalCost, parseShipMaterials(materials))
     }
   }
 

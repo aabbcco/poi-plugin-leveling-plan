@@ -36,6 +36,14 @@ class PlanForm extends Component {
       errors: [],
       selectionMode,
       selectedTargets,
+      shipPortalContainer: null,
+    }
+  }
+
+  setShipSelectorAnchor = (node) => {
+    const container = node ? node.closest('.modal-dialog') : null
+    if (this.state.shipPortalContainer !== container) {
+      this.setState({ shipPortalContainer: container })
     }
   }
 
@@ -175,7 +183,9 @@ class PlanForm extends Component {
 
   render() {
     const { show, onHide, editingPlan, ships, planType } = this.props
-    const { shipId, startLevel, targetLevel, maps, errors, selectionMode, selectedTargets } = this.state
+    const {
+      shipId, startLevel, targetLevel, maps, errors, selectionMode, selectedTargets, shipPortalContainer,
+    } = this.state
     const isFarming = planType === 'farming' || (editingPlan && editingPlan.type === 'farming')
 
     const selectedShip = shipId ? _.find(ships, s => s.api_id === parseInt(shipId)) : null
@@ -223,26 +233,30 @@ class PlanForm extends Component {
                 </Button>
               </div>
             )}
-            {isFarming && selectionMode === 'shipName' && (
-              <MasterShipSelector
-                value={shipId}
-                onChange={this.handleShipChange}
-              />
-            )}
-            {isFarming && selectionMode === 'equipment' && (
-              <div style={{ height: 360 }}>
-                <EquipShipSelector
-                  selectedTargets={selectedTargets}
-                  onChange={(targets) => this.setState({ selectedTargets: targets })}
+            <div ref={this.setShipSelectorAnchor}>
+              {isFarming && selectionMode === 'shipName' && (
+                <MasterShipSelector
+                  value={shipId}
+                  onChange={this.handleShipChange}
+                  portalContainer={shipPortalContainer}
                 />
-              </div>
-            )}
-            {!isFarming && (
-              <ShipSelector
-                value={shipId}
-                onChange={this.handleShipChange}
-              />
-            )}
+              )}
+              {isFarming && selectionMode === 'equipment' && (
+                <div style={{ height: 360 }}>
+                  <EquipShipSelector
+                    selectedTargets={selectedTargets}
+                    onChange={(targets) => this.setState({ selectedTargets: targets })}
+                  />
+                </div>
+              )}
+              {!isFarming && (
+                <ShipSelector
+                  value={shipId}
+                  onChange={this.handleShipChange}
+                  portalContainer={shipPortalContainer}
+                />
+              )}
+            </div>
             {editingPlan && !isFarming && (
               <p className="help-block">
                 {__('Cannot change ship in existing plan')}

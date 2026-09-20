@@ -83,5 +83,17 @@
   "Total Remodel Cost": "Total Remodel Cost",
   "Kaisou Materials Sync": "Remodel Materials Sync",
   "Ship remodel entries": "Ship remodel entries",
-  "No active plans": "No active plans"
+  "No active plans": "No active plans",
+  "Plan Completed": "Plan Completed",
+  "has reached": "has reached",
+  "Select maps": "Select maps",
+  "Search map": "Search map",
+  "No results": "No results",
+  "Click to select maps": "Click to select maps",
+  "Start Level": "Start Level",
+  "Enter Start level": "Enter Start level",
+  "No remodel required": "No remodel required",
+  "Preset": "Preset",
+  "Search": "Search",
+  "Failed to delete plan. Please try again.": "Failed to delete plan. Please try again."
 }
