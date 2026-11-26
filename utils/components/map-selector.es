@@ -24,8 +24,8 @@ class MapSelector extends Component {
       activeWorld: null,
     }
     this.worldGroups = getWorldGroups()
-    const worlds = Object.keys(this.worldGroups).sort((a, b) => Number(a) - Number(b))
-    this.state.activeWorld = worlds[0] || null
+    this.worlds = Object.keys(this.worldGroups).sort((a, b) => Number(a) - Number(b))
+    this.state.activeWorld = this.worlds[0] || null
   }
 
   toggleMap = (mapId) => {
@@ -50,7 +50,7 @@ class MapSelector extends Component {
   renderPopoverContent = () => {
     const { value = [] } = this.props
     const { activeWorld, searchQuery } = this.state
-    const worlds = Object.keys(this.worldGroups).sort((a, b) => Number(a) - Number(b))
+    const worlds = this.worlds
 
     const valueStrings = value.map(String)
 
@@ -62,9 +62,10 @@ class MapSelector extends Component {
       <div className="map-selector-tabs">
         <div className="map-selector-popover-header">
           <span className="map-selector-popover-title">{__('Select maps')}</span>
-          <button
-            type="button"
-            className="bp6-button bp6-minimal bp6-small bp6-icon-cross"
+          <Button
+            minimal
+            small
+            icon="cross"
             onClick={this.closePopover}
           />
         </div>
@@ -140,17 +141,8 @@ class MapSelector extends Component {
               <button
                 key={mapId}
                 type="button"
+                className={`map-quick-chip ${isSelected ? 'selected' : ''}`}
                 onClick={() => this.toggleMap(mapId)}
-                style={{
-                  padding: '2px 8px',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  background: isSelected ? '#137cbd' : '#f5f5f5',
-                  color: isSelected ? '#fff' : '#333',
-                  border: '1px solid',
-                  borderColor: isSelected ? '#137cbd' : '#ccc',
-                  borderRadius: 3,
-                }}
               >
                 {formatMapName(idStr)}
               </button>
@@ -163,7 +155,7 @@ class MapSelector extends Component {
           popoverClassName="map-selector-popover"
           usePortal={false}
           minimal
-          content={this.renderPopoverContent()}
+          content={this.state.isOpen ? this.renderPopoverContent() : null}
         >
           <div
             className="map-selector-trigger"

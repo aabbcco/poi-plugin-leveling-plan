@@ -3,14 +3,13 @@ import _ from 'lodash'
 import {
   constSelector,
   shipsSelector,
-  basicSelector,
 } from 'views/utils/selectors'
-import { exp, MAX_LEVEL } from './constants'
+import { exp } from './constants'
 import { getMapExp, calcBattleExp } from './exp-calculator'
 import { calcPlanDetail, formatMapName } from './plan-helpers'
-import { KEY_PLANS, KEY_SETTINGS, KEY_STATS } from './config-helper'
+import { PLUGIN_KEY, KEY_PLANS, KEY_SETTINGS, KEY_STATS } from './config-helper'
 import { getFarmingMap, composeEquipmentList } from './equip-provider'
-import { buildRemodelIndex } from './kaisou-cost'
+import { buildRemodelIndex, getShipRemodelDetail, addCost, emptyCost } from './kaisou-cost'
 
 // ============ 1. 基础数据 Selectors ============
 
@@ -43,43 +42,6 @@ export const ourShipsSelector = createSelector(
       return _.keyBy(ships, 'api_id')
     }
     return ships
-  }
-)
-
-// 资源数据（油弹钢铝）
-export const resourcesSelector = createSelector(
-  [basicSelector],
-  basic => {
-    if (!basic) {
-      return {
-        fuel: 0,
-        ammo: 0,
-        steel: 0,
-        bauxite: 0,
-      }
-    }
-    return {
-      fuel: basic.api_fuel || 0,
-      ammo: basic.api_ammo || 0,
-      steel: basic.api_steel || 0,
-      bauxite: basic.api_bauxite || 0,
-    }
-  }
-)
-
-// 开发资材
-export const materialsSelector = createSelector(
-  [basicSelector],
-  basic => {
-    if (!basic || !basic.api_material) {
-      return {
-        devmat: 0,
-      }
-    }
-    // api_material 数组: [bucket, devmat, screw, ...]
-    return {
-      devmat: basic.api_material[1] || 0,
-    }
   }
 )
 
@@ -116,58 +78,7 @@ export const shipUniqueMapSelector = createSelector(
     .value()
 )
 
-// 改造等级链（每艘舰船的改造等级列表）
-export const remodelLevelSelector = createSelector(
-  [$shipsSelector, remodelChainsSelector],
-  ($ships, chains) => {
-    const levelsMap = {}
-    Object.entries(chains).forEach(([shipId, chain]) => {
-      const baseShip = $ships[shipId]
-      if (!baseShip || typeof baseShip.api_aftershipid === 'undefined') return
-
-      let remodelLvs = [baseShip.api_afterlv || 0]
-      for (let i = 1; i < chain.length; i++) {
-        const nextShip = $ships[chain[i]]
-        if (!nextShip) break
-        const nextLv = nextShip.api_afterlv || 0
-
-        // 如果下一个改造等级小于等于当前最后一个，说明到达终点
-        if (nextLv <= remodelLvs[remodelLvs.length - 1]) break
-
-        remodelLvs = [...remodelLvs, nextLv]
-      }
-
-      // 添加99级和最大等级作为练级目标
-      const lastLv = remodelLvs[remodelLvs.length - 1] || 0
-      if (lastLv < 100) {
-        remodelLvs = [...remodelLvs, 99, MAX_LEVEL]
-      } else {
-        remodelLvs = [...remodelLvs, MAX_LEVEL]
-      }
-
-      levelsMap[shipId] = remodelLvs
-    })
-    return levelsMap
-  }
-)
-
-// ============ 3. 组合数据 Selectors ============
-
-// 舰船完整数据（实例 + 图鉴 + 改造链）
-export const shipsWithDetailsSelector = createSelector(
-  [ourShipsSelector, $shipsSelector, remodelChainsSelector, remodelLevelSelector],
-  (ships, $ships, chains, remodelLvs) => _.map(ships, ship => {
-    const $ship = $ships[ship.api_ship_id]
-    return {
-      ...ship,
-      $ship,
-      remodelChain: chains[ship.api_ship_id] || [],
-      remodelLevels: remodelLvs[ship.api_ship_id] || [],
-    }
-  })
-)
-
-// ============ 4. 个人统计数据 Selectors ============
+// ============ 3. 个人统计数据 Selectors ============
 
 // 个人统计数据 selector
 export const personalStatsSelector = createSelector(
@@ -208,18 +119,6 @@ export const normalPlansArraySelector = createSelector(
   plans => plans.filter(plan => plan.type !== 'farming')
 )
 
-// 未完成的计划
-export const activePlansSelector = createSelector(
-  [normalPlansArraySelector],
-  plans => plans.filter(plan => !plan.completed)
-)
-
-// 已完成的计划
-export const completedPlansSelector = createSelector(
-  [normalPlansArraySelector],
-  plans => plans.filter(plan => plan.completed)
-)
-
 // 所有计划的详情（数组）
 export const allPlanDetailsSelector = createSelector(
   [normalPlansArraySelector, ourShipsSelector, $shipsSelector, personalStatsSelector, planSettingsSelector],
@@ -227,18 +126,19 @@ export const allPlanDetailsSelector = createSelector(
     return plans
       .map(plan => {
         try {
-          const ship = _.find(ships, s => s.api_id === plan.shipId)
+          const ship = ships[plan.shipId]
           if (!ship) {
             console.warn('[LevelingPlan] Ship not found for plan:', plan.id, 'shipId:', plan.shipId)
             return null
           }
-          
-          const $ship = $ships[plan.shipMasterId]
+
+          const currentMasterId = ship.api_ship_id || plan.shipMasterId
+          const $ship = $ships[currentMasterId] || $ships[plan.shipMasterId]
           if (!$ship) {
-            console.warn('[LevelingPlan] Ship master data not found for plan:', plan.id, 'shipMasterId:', plan.shipMasterId)
+            console.warn('[LevelingPlan] Ship master data not found for plan:', plan.id, 'shipMasterId:', currentMasterId)
             return null
           }
-          
+
           return calcPlanDetail(plan, ship, $ship, personalStats, settings)
         } catch (error) {
           console.error('[LevelingPlan] Error calculating plan detail for plan:', plan.id, error)
@@ -314,9 +214,51 @@ export const masterShipMenuDataSelector = createSelector(
 
 // ============ 4. 装备→舰娘映射 Selectors ============
 
+export const equipShipsDataSelector = createSelector(
+  [state => state.config],
+  config => _.get(config, `${PLUGIN_KEY}.equipShipsData`, null)
+)
+
+export const kaisouMaterialsSelector = createSelector(
+  [state => state.config],
+  config => _.get(config, `${PLUGIN_KEY}.kaisouMaterials`, null)
+)
+
+// 进行中计划的改造消耗汇总（资源变动时不重算改造链）
+export const remodelCostsSummarySelector = createSelector(
+  [activePlanDetailsSelector, $shipsSelector, kaisouMaterialsSelector],
+  (plans, $ships, kaisouMaterials) => {
+    const planCosts = (plans || []).map(plan => {
+      const costData = getShipRemodelDetail(
+        plan.shipMasterId,
+        plan.currentLv,
+        plan.targetLv,
+        $ships,
+        kaisouMaterials
+      )
+      return {
+        id: plan.id,
+        shipName: plan.shipName,
+        currentLv: plan.currentLv,
+        targetLv: plan.targetLv,
+        ...costData,
+      }
+    }).filter(pc => pc.steps.length > 0)
+
+    const totalCost = planCosts.reduce((acc, pc) => addCost(acc, pc.totalCost), emptyCost())
+    const hasAnyCost = (
+      totalCost.ammo > 0 ||
+      totalCost.steel > 0 ||
+      Object.keys(totalCost.consumable).length > 0
+    )
+
+    return { planCosts, totalCost, hasAnyCost }
+  }
+)
+
 export const equipFarmingMapSelector = createSelector(
-  [$shipsSelector],
-  ($ships) => getFarmingMap($ships)
+  [$shipsSelector, equipShipsDataSelector],
+  ($ships, syncedData) => getFarmingMap($ships, syncedData)
 )
 
 export const equipListSelector = createSelector(
@@ -325,21 +267,15 @@ export const equipListSelector = createSelector(
     composeEquipmentList(farmingMap, $ships, $equipments, $equipTypes)
 )
 
-export const equipSyncMetaSelector = () => {
-  try {
-    return window.config.get('plugin.poi-plugin-leveling-plan.equipSyncMeta', {})
-  } catch (e) {
-    return {}
-  }
-}
+export const equipSyncMetaSelector = createSelector(
+  [state => state.config],
+  config => _.get(config, `${PLUGIN_KEY}.equipSyncMeta`, {})
+)
 
-export const kaisouSyncMetaSelector = () => {
-  try {
-    return window.config.get('plugin.poi-plugin-leveling-plan.kaisouMeta', {})
-  } catch (e) {
-    return {}
-  }
-}
+export const kaisouSyncMetaSelector = createSelector(
+  [state => state.config],
+  config => _.get(config, `${PLUGIN_KEY}.kaisouMeta`, {})
+)
 
 // ============ 5. 养殖计划 Selectors ============
 
@@ -475,7 +411,6 @@ export const farmingPlanDetailsSelector = createSelector(
           displayTitle,
           targets: targetDetails,
           maps: plan.maps,
-          notes: plan.notes || '',
           createdAt: plan.createdAt,
           updatedAt: plan.updatedAt,
         }

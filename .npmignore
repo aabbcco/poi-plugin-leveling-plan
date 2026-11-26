@@ -16,5 +16,6 @@ dist/
 # Development dependencies
 node_modules/
 
-# Development scripts
+# Development scripts and tests
 scripts/
+test/

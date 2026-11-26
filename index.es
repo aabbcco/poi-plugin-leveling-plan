@@ -13,17 +13,20 @@ export const windowOptions = {
 
 const schedule = typeof setImmediate === 'function' ? setImmediate : fn => setTimeout(fn, 0)
 
+let unsubscribeAutoComplete = null
+
 function tryInit(path, fnName, label) {
   try {
     const mod = require(path)
-    mod[fnName]()
+    return mod[fnName]()
   } catch (error) {
     console.error(`[LevelingPlan] Failed to load ${label}:`, error)
+    return null
   }
 }
 
 schedule(() => {
-  tryInit('./services/auto-complete-observer', 'initAutoCompleteObserver', 'auto-complete observer')
+  unsubscribeAutoComplete = tryInit('./services/auto-complete-observer', 'initAutoCompleteObserver', 'auto-complete observer')
   tryInit('./services/battle-observer', 'initBattleObserver', 'battle observer')
 })
 
@@ -31,3 +34,11 @@ schedule(() => {
   tryInit('./services/sync-service', 'initEquipSync', 'equip sync')
   tryInit('./services/sync-service', 'initKaisouSync', 'kaisou sync')
 })
+
+export const pluginWillUnload = () => {
+  if (typeof unsubscribeAutoComplete === 'function') {
+    unsubscribeAutoComplete()
+    unsubscribeAutoComplete = null
+  }
+  tryInit('./services/battle-observer', 'stopBattleObserver', 'stop battle observer')
+}

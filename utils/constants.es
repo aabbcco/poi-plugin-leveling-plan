@@ -229,6 +229,9 @@ export const EXP_BY_POI_DB = {
   65: 242,
   71: 220,
   72: 213,
+  73: 190,
+  74: 210,
+  75: 170,
 }
 
 // 世界名称映射
@@ -262,21 +265,6 @@ export const expLevel = ['S', 'A', 'B', 'C', 'D']
 
 // 战斗结果经验加成
 export const expPercent = [1.2, 1.0, 1.0, 0.8, 0.7]
-
-// 旗舰练巡加成
-export const bonusExpScaleFlagship = [
-  [5, 8, 11, 15, 20],
-  [10, 13, 16, 20, 25],
-]
-
-// 非旗舰练巡加成
-export const bonusExpScaleNonFlagship = [
-  [3, 5, 7, 10, 15],
-  [4, 6, 8, 12, 17.5],
-]
-
-// 经验类型
-export const expClass = ['Basic', 'Flagship', 'MVP', 'MVP and flagship']
 
 // 舰种名称到 ID 的映射
 export const catMap = shipCat.reduce((map, { name, id }) => {

@@ -1,6 +1,6 @@
 {
   "name": "poi-plugin-leveling-plan",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Leveling plan plugin for poi",
   "main": "index.js",
   "keywords": [
@@ -29,8 +29,7 @@
     "services/**/*.js",
     "assets",
     "i18n",
-    "README.md",
-    "LICENSE"
+    "README.md"
   ],
   "publishConfig": {
     "access": "public",
@@ -39,8 +38,7 @@
   "scripts": {
     "prepack": "poi-util-transpile",
     "postpack": "npm run clean:js",
-    "prepublishOnly": "npm run build",
-    "test": "echo \"Warning: no test specified\"",
+    "test": "node scripts/run-tests.js",
     "clean:js": "node scripts/clean-js.js",
     "build": "poi-util-transpile && node scripts/build.js && node scripts/clean-js.js",
     "build:transpile": "poi-util-transpile",

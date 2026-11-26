@@ -74,7 +74,7 @@
 }
 
 #leveling-plan .level-info {
-  color: #666;
+  opacity: 0.72;
   font-size: 14px;
 }
 
@@ -106,7 +106,7 @@
 
 #leveling-plan .exp-info {
   margin-top: 5px;
-  color: #666;
+  opacity: 0.78;
   font-size: 13px;
 }
 
@@ -142,7 +142,7 @@
 }
 
 #leveling-plan .map-exp {
-  color: rgba(255, 255, 255, 0.7);
+  opacity: 0.75;
   min-width: 100px;
 }
 
@@ -178,11 +178,13 @@
   border-color: #137cbd;
 }
 
+.bp5-dark #leveling-plan .map-selector-trigger,
 .bp6-dark #leveling-plan .map-selector-trigger {
   background: #30404d;
   border-color: #5f6b7c;
 }
 
+.bp5-dark #leveling-plan .map-selector-trigger:hover,
 .bp6-dark #leveling-plan .map-selector-trigger:hover {
   border-color: #137cbd;
 }
@@ -209,6 +211,7 @@
   border-bottom: 1px solid #e5e5e5;
 }
 
+.bp5-dark #leveling-plan .map-selector-popover-header,
 .bp6-dark #leveling-plan .map-selector-popover-header {
   border-bottom-color: #404854;
 }
@@ -219,51 +222,13 @@
   color: #333;
 }
 
+.bp5-dark #leveling-plan .map-selector-popover-title,
 .bp6-dark #leveling-plan .map-selector-popover-title {
   color: #ddd;
 }
 
 #leveling-plan .map-selector-popover-search {
   padding: 4px 8px;
-}
-
-#leveling-plan .map-selector-dropdown {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-#leveling-plan .map-selector-list {
-  padding: 5px;
-}
-
-#leveling-plan .map-selector-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-  border-radius: 3px;
-}
-
-#leveling-plan .map-selector-item:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-#leveling-plan .map-selector-item.selected {
-  background-color: rgba(51, 122, 183, 0.1);
-}
-
-#leveling-plan .map-selector-check {
-  width: 20px;
-}
-
-#leveling-plan .map-selector-name {
-  flex: 1;
-}
-
-#leveling-plan .map-selector-exp {
-  color: #888;
-  font-size: 12px;
 }
 
 #leveling-plan .quick-select-buttons {
@@ -273,57 +238,51 @@
   margin-bottom: 15px;
 }
 
-.bp6-dark #leveling-plan .map-selector-dropdown {
-  background: #303030;
+#leveling-plan .map-quick-chip,
+#leveling-plan .remodel-level-tag {
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 3px;
 }
 
-.bp6-dark #leveling-plan .map-selector-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+.bp5-dark #leveling-plan .map-quick-chip,
+.bp6-dark #leveling-plan .map-quick-chip,
+.bp5-dark #leveling-plan .remodel-level-tag,
+.bp6-dark #leveling-plan .remodel-level-tag {
+  background: #30404d;
+  color: #e1e8ed;
+  border-color: #5f6b7c;
 }
 
-.bp6-dark #leveling-plan .map-selector-item.selected {
-  background-color: rgba(79, 172, 254, 0.2);
+#leveling-plan .map-quick-chip.selected,
+#leveling-plan .remodel-level-tag.active,
+.bp5-dark #leveling-plan .map-quick-chip.selected,
+.bp6-dark #leveling-plan .map-quick-chip.selected,
+.bp5-dark #leveling-plan .remodel-level-tag.active,
+.bp6-dark #leveling-plan .remodel-level-tag.active {
+  background: #137cbd;
+  color: #fff;
+  border-color: #137cbd;
 }
 
-.bp6-dark #leveling-plan .map-selector-exp {
-  color: #999;
-}
-
+#leveling-plan .map-selector .bp5-popover,
 #leveling-plan .map-selector .bp6-popover {
   position: absolute;
   contain: layout;
   z-index: 1000;
 }
 
+#leveling-plan .map-selector .bp5-popover-content,
+#leveling-plan .map-selector .bp5-menu,
 #leveling-plan .map-selector .bp6-popover-content,
 #leveling-plan .map-selector .bp6-menu {
   max-height: 300px;
   overflow-y: auto;
   position: relative;
-}
-
-#leveling-plan .map-select-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#leveling-plan .map-select-check {
-  width: 20px;
-}
-
-#leveling-plan .map-select-name {
-  flex: 1;
-}
-
-#leveling-plan .map-select-exp {
-  color: #888;
-  font-size: 12px;
-}
-
-#leveling-plan .map-selector .bp6-menu {
-  max-height: 300px;
-  overflow-y: auto;
 }
 
 #leveling-plan .map-selector-tabs {
@@ -345,73 +304,9 @@
   padding-left: 0;
 }
 
+#leveling-plan .map-selector-popover .bp5-menu-item::before,
 #leveling-plan .map-selector-popover .bp6-menu-item::before {
   display: none;
-}
-
-.bp6-dark #leveling-plan .map-select-exp {
-  color: #999;
-}
-
-#leveling-plan .map-quick-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 70px;
-}
-
-#leveling-plan .map-exp-badge {
-  font-size: 11px;
-  opacity: 0.8;
-}
-
-#leveling-plan .show-all-toggle {
-  margin-bottom: 15px;
-}
-
-#leveling-plan .map-table-container {
-  max-height: 300px;
-  overflow-y: auto;
-  margin-bottom: 15px;
-}
-
-#leveling-plan .selected-maps {
-  padding: 10px;
-  background-color: #f5f5f5;
-  border-radius: 3px;
-}
-
-#leveling-plan .selected-maps-label {
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-#leveling-plan .selected-maps-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-#leveling-plan .selected-map-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 8px;
-  background-color: #337ab7;
-  color: white;
-  border-radius: 3px;
-  font-size: 13px;
-}
-
-#leveling-plan .remove-map {
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 16px;
-  line-height: 1;
-}
-
-#leveling-plan .remove-map:hover {
-  color: #ff4444;
 }
 
 /* Settings */
@@ -460,6 +355,7 @@
   z-index: 1;
 }
 
+.bp5-dark #leveling-plan .map-exp-table th,
 .bp6-dark #leveling-plan .map-exp-table th {
   background-color: #303030;
 }
@@ -520,11 +416,13 @@
   color: #fff;
 }
 
+#leveling-plan .map-selector-popover .bp5-menu,
 #leveling-plan .map-selector-popover .bp6-menu {
   max-height: 300px;
   overflow-y: auto;
 }
 
+#leveling-plan .map-selector-popover.bp5-overlay,
 #leveling-plan .map-selector-popover.bp6-overlay {
   position: absolute;
   height: 0;

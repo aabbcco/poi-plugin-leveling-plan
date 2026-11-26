@@ -84,14 +84,15 @@ npm run build:all
 ```
 poi-plugin-leveling-plan/
 ├── index.es                 # Plugin entry point
-├── views/                   # React components
-│   ├── leveling-plan-area.es
+├── views/                   # Entry view
+│   └── leveling-plan-area.es
+├── utils/                   # Utility functions & React components
 │   └── components/
-├── utils/                   # Utility functions
 ├── services/                # Business logic
+├── test/                    # Unit tests
 ├── i18n/                    # Translations
 ├── assets/                  # Static assets
-└── scripts/                 # Build scripts
+└── scripts/                 # Build & test scripts
 ```
 
 ## Building for Distribution

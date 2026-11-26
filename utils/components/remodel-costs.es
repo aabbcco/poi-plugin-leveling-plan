@@ -3,73 +3,24 @@ import { Panel } from 'react-bootstrap'
 import { connect } from 'react-redux'
 import { Tag } from '@blueprintjs/core'
 import _ from 'lodash'
-import { activePlanDetailsSelector, $shipsSelector } from '../../utils/selectors'
-import { getRemodelChainForShip, getShipMaterials, parseShipMaterials, addCost, emptyCost } from '../../utils/kaisou-cost'
+import { activePlanDetailsSelector, remodelCostsSummarySelector } from '../../utils/selectors'
 import { RemodelCostDisplay } from './plan-item'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
-
-function calcPlanRemodelCost(shipMasterId, currentLv, targetLv, $ships) {
-  const chain = getRemodelChainForShip(shipMasterId, $ships)
-
-  const steps = []
-  for (let i = 0; i < chain.length - 1; i++) {
-    const fromId = chain[i]
-    const toId = chain[i + 1]
-    const level = +($ships[fromId]?.api_afterlv || 0)
-    if (level <= 0 || level >= 200) continue
-
-    const isPassedLevel = level <= currentLv
-    const isStillInForm = fromId === shipMasterId
-
-    if (level <= targetLv && (level > currentLv || isStillInForm)) {
-      steps.push({
-        level,
-        fromId,
-        toId,
-        toName: $ships[toId]?.api_name || `Ship#${toId}`,
-        isDelayed: isPassedLevel && isStillInForm,
-      })
-    }
-  }
-
-  let totalCost = emptyCost()
-  steps.forEach(step => {
-    const materials = getShipMaterials(step.fromId)
-    if (materials) {
-      totalCost = addCost(totalCost, parseShipMaterials(materials))
-    }
-  })
-
-  return { steps, totalCost }
-}
+const EMPTY_ARRAY = []
+const EMPTY_OBJECT = {}
 
 class RemodelCosts extends Component {
   render() {
-    const { plans, $ships, resources, useitems } = this.props
+    const { hasActivePlans, planCosts, totalCost, hasAnyCost, resources, useitems } = this.props
 
-    if (!plans || plans.length === 0) {
+    if (!hasActivePlans) {
       return (
         <div className="empty-message" style={{ padding: 20, textAlign: 'center' }}>
           {__('No active plans')}
         </div>
       )
     }
-
-    const planCosts = plans.map(plan => {
-      const fromLevel = plan.startLv !== undefined ? plan.startLv : plan.currentLv
-      const costData = calcPlanRemodelCost(plan.shipMasterId, fromLevel, plan.targetLv, $ships)
-      return {
-        id: plan.id,
-        shipName: plan.shipName,
-        fromLevel,
-        targetLv: plan.targetLv,
-        ...costData,
-      }
-    }).filter(pc => pc.steps.length > 0)
-
-    const totalCost = planCosts.reduce((acc, pc) => addCost(acc, pc.totalCost), emptyCost())
-    const hasAnyCost = totalCost.ammo > 0 || totalCost.steel > 0 || Object.keys(totalCost.consumable).length > 0
 
     return (
       <div className="remodel-costs">
@@ -93,7 +44,7 @@ class RemodelCosts extends Component {
                 <span>
                   <strong>{pc.shipName}</strong>
                   <span style={{ marginLeft: 12, opacity: 0.7 }}>
-                    Lv.{pc.fromLevel} → Lv.{pc.targetLv}
+                    Lv.{pc.currentLv} → Lv.{pc.targetLv}
                   </span>
                 </span>
                 <span style={{ textAlign: 'right' }}>
@@ -121,11 +72,15 @@ class RemodelCosts extends Component {
 }
 
 const mapStateToProps = (state) => {
+  const activePlans = activePlanDetailsSelector(state)
+  const { planCosts, totalCost, hasAnyCost } = remodelCostsSummarySelector(state)
   return {
-    plans: activePlanDetailsSelector(state),
-    $ships: $shipsSelector(state),
-    resources: _.get(state, 'info.resources', []),
-    useitems: _.get(state, 'info.useitems', {}),
+    hasActivePlans: activePlans.length > 0,
+    planCosts,
+    totalCost,
+    hasAnyCost,
+    resources: _.get(state, 'info.resources', EMPTY_ARRAY),
+    useitems: _.get(state, 'info.useitems', EMPTY_OBJECT),
   }
 }
 

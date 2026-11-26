@@ -21,8 +21,8 @@ class FarmingPlanList extends Component {
               <FarmingPlanItem
                 key={plan.id}
                 planDetail={plan}
-                onEdit={() => onEdit(plan.id)}
-                onDelete={() => onDelete(plan.id)}
+                onEdit={onEdit}
+                onDelete={onDelete}
               />
             ))
           )}

@@ -7,10 +7,8 @@ const handleResponse = (e) => {
 
   if (path === '/kcsapi/api_req_sortie/battleresult' ||
       path === '/kcsapi/api_req_combined_battle/battleresult' ||
-      path === '/kcsapi/api_req_battle/battleresult' ||
-      path === '/kcsapi/api_req_practice/battle_result') {
+      path === '/kcsapi/api_req_battle/battleresult') {
     if (!currentMapId) {
-      console.warn('[LevelingPlan] Battle result received but no mapId set')
       return
     }
 
@@ -21,14 +19,17 @@ const handleResponse = (e) => {
   }
 
   if (path === '/kcsapi/api_req_map/start') {
-    const worldId = body?.api_maparea_id
-    const mapNo = body?.api_mapinfo_no
-    if (worldId !== undefined && mapNo !== undefined) {
+    const worldId = Number(body?.api_maparea_id)
+    const mapNo = Number(body?.api_mapinfo_no)
+    // 仅统计常规海域 (1-1 ~ 7-x)，过滤活动海域避免长期堆积无效统计
+    if (worldId >= 1 && worldId <= 7 && mapNo >= 1) {
       currentMapId = `${worldId}${mapNo}`
+    } else {
+      currentMapId = ''
     }
   }
 
-  if (path && path.includes('port')) {
+  if (path === '/kcsapi/api_port/port') {
     currentMapId = ''
   }
 }

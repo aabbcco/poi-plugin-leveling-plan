@@ -43,7 +43,10 @@ class StaticUseitemIcon extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (!_.isEqual(prevProps, this.props)) {
+    if (
+      prevProps.serverIp !== this.props.serverIp ||
+      prevProps.useitemId !== this.props.useitemId
+    ) {
       this.loadSpritesheet()
     }
   }

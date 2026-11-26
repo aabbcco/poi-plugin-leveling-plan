@@ -1,5 +1,5 @@
-# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
-# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+# This workflow builds, tests, and packages the plugin in the build job,
+# then publishes the verified dist/ artifact to npm and attaches the ZIP to the GitHub Release.
 
 name: Node.js Package
 
@@ -15,8 +15,26 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24.x
-      - run: npm ci
-      - run: npm test
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and test
+        run: npm test
+
+      - name: Build zip
+        run: npm run build:zip
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist
+            *.zip
+          if-no-files-found: error
+          retention-days: 1
 
   publish-npm:
     needs: build
@@ -30,23 +48,19 @@ jobs:
       packages: read
 
     steps:
-      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 24.x
-    
-      - name: Install dependencies
-        run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: .
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish ./dist --provenance --access public
 
-      - name: Build zip
-        run: npm run build:zip
-      
       - name: Upload zip to release
         uses: softprops/action-gh-release@v1
         with:

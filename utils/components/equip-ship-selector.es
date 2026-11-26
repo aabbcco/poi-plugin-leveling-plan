@@ -1,10 +1,10 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
-import { Card, Button, InputGroup, Tag, Collapse, Classes } from '@blueprintjs/core'
+import { Card, Button, InputGroup, Tag, Collapse, Classes, Icon } from '@blueprintjs/core'
 import { SlotitemIcon } from 'views/components/etc/icon'
 import Fuse from 'fuse.js'
-import { equipListSelector, $equipTypesSelector, $shipsSelector } from '../../utils/selectors'
+import { equipListSelector, $equipTypesSelector } from '../../utils/selectors'
 import { MAX_LEVEL } from '../../utils/constants'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
@@ -29,6 +29,8 @@ class EquipShipSelector extends Component {
       ignoreLocation: true,
     }
     this.fuse = new Fuse([], fuseOptions)
+    this._typesCache = null
+    this._groupsCache = null
   }
 
   buildShipLookup(equipList) {
@@ -36,7 +38,9 @@ class EquipShipSelector extends Component {
     if (!equipList) return lookup
     equipList.forEach(eq => {
       eq.ships.forEach(s => {
-        lookup[s.shipId] = { shipName: s.shipName, providerId: s.providerId, providerName: s.providerName, provideLevel: s.level }
+        if (!lookup[s.shipId]) {
+          lookup[s.shipId] = { shipName: s.shipName, providerId: s.providerId, providerName: s.providerName }
+        }
       })
     })
     return lookup
@@ -53,7 +57,6 @@ class EquipShipSelector extends Component {
         shipName: s ? s.shipName : `Ship#${t.shipMasterId}`,
         providerId: s ? s.providerId : t.shipMasterId,
         providerName: s ? s.providerName : '',
-        provideLevel: s ? s.provideLevel : 1,
         targetLevel: t.targetLevel || 50,
       }
     })
@@ -68,12 +71,12 @@ class EquipShipSelector extends Component {
     if (this.props.equipList !== prevProps.equipList) {
       this.updateFuseCollection(this.props.equipList)
     }
-    // Sync targets from props when equipList or selectedTargets changes
-    const equipLoaded = this.props.equipList && this.props.equipList.length
-    const prevLoaded = prevProps.equipList && prevProps.equipList.length
-    const targetsChanged = this.props.selectedTargets !== prevProps.selectedTargets
 
-    if (equipLoaded && (targetsChanged || (!prevLoaded && equipLoaded))) {
+    // 仅在 equipList 从空异步加载完成后回填已有目标的舰船名称
+    const equipLoaded = this.props.equipList && this.props.equipList.length > 0
+    const prevLoaded = prevProps.equipList && prevProps.equipList.length > 0
+
+    if (!prevLoaded && equipLoaded) {
       const targetsMap = this.buildTargetsMap(this.props.selectedTargets, this.props.equipList)
       this.setState(prev => {
         const merged = { ...prev.targets }
@@ -81,7 +84,7 @@ class EquipShipSelector extends Component {
           if (!merged[id]) {
             merged[id] = t
           } else {
-            merged[id] = { ...merged[id], shipName: t.shipName, providerName: t.providerName, provideLevel: t.provideLevel }
+            merged[id] = { ...merged[id], shipName: t.shipName, providerName: t.providerName }
           }
         })
         return { targets: merged }
@@ -91,6 +94,65 @@ class EquipShipSelector extends Component {
 
   updateFuseCollection = (equipList) => {
     this.fuse.setCollection(equipList || [])
+  }
+
+  getAvailableTypes(equipList, $equipTypes) {
+    if (
+      this._typesCache &&
+      this._typesCache.equipList === equipList &&
+      this._typesCache.$equipTypes === $equipTypes
+    ) {
+      return this._typesCache.result
+    }
+
+    const availableTypesMap = {}
+    equipList.forEach(eq => {
+      const tId = eq.typeId || 999
+      if (!availableTypesMap[tId]) {
+        const typeInfo = $equipTypes[tId]
+        availableTypesMap[tId] = {
+          id: tId,
+          name: typeInfo ? typeInfo.api_name : 'Others',
+          iconId: eq.iconId,
+        }
+      }
+    })
+    const result = Object.values(availableTypesMap).sort((a, b) => a.id - b.id)
+    this._typesCache = { equipList, $equipTypes, result }
+    return result
+  }
+
+  getGroupedEquipment(equipList, search, selectedTypeIds) {
+    if (
+      this._groupsCache &&
+      this._groupsCache.equipList === equipList &&
+      this._groupsCache.search === search &&
+      this._groupsCache.selectedTypeIds === selectedTypeIds
+    ) {
+      return this._groupsCache.result
+    }
+
+    let filtered = equipList
+    if (search) {
+      const results = this.fuse.search(search)
+      filtered = results.map(r => r.item)
+    }
+
+    if (selectedTypeIds.size > 0) {
+      filtered = filtered.filter(eq => selectedTypeIds.has(eq.typeId || 999))
+    }
+
+    const groups = {}
+    filtered.forEach(eq => {
+      const typeId = eq.typeId || 999
+      if (!groups[typeId]) groups[typeId] = []
+      groups[typeId].push(eq)
+    })
+    const sortedTypeIds = Object.keys(groups).sort((a, b) => parseInt(a, 10) - parseInt(b, 10))
+
+    const result = { groups, sortedTypeIds }
+    this._groupsCache = { equipList, search, selectedTypeIds, result }
+    return result
   }
 
   handleSearchChange = (e) => {
@@ -121,48 +183,46 @@ class EquipShipSelector extends Component {
     })
   }
 
-  handleCheckShip = (shipMasterId, shipName, providerId, providerName, provideLevel) => {
-    this.setState(prev => {
-      const nextTargets = { ...prev.targets }
-      if (nextTargets[shipMasterId]) {
-        delete nextTargets[shipMasterId]
-      } else {
-        nextTargets[shipMasterId] = {
-          shipMasterId,
-          shipName,
-          providerId,
-          providerName,
-          provideLevel,
-          targetLevel: parseInt(prev.batchLevel, 10) || 50,
-        }
+  handleCheckShip = (shipMasterId, shipName, providerId, providerName) => {
+    const { targets, batchLevel } = this.state
+    const nextTargets = { ...targets }
+    if (nextTargets[shipMasterId]) {
+      delete nextTargets[shipMasterId]
+    } else {
+      nextTargets[shipMasterId] = {
+        shipMasterId,
+        shipName,
+        providerId,
+        providerName,
+        targetLevel: parseInt(batchLevel, 10) || 50,
       }
-      this.notifyChange(nextTargets)
-      return { targets: nextTargets }
-    })
+    }
+    this.setState({ targets: nextTargets })
+    this.notifyChange(nextTargets)
   }
 
   handleTargetLevelChange = (shipMasterId, value) => {
-    this.setState(prev => {
-      const nextTargets = { ...prev.targets }
-      if (nextTargets[shipMasterId]) {
-        const level = parseInt(value, 10)
-        nextTargets[shipMasterId] = {
-          ...nextTargets[shipMasterId],
-          targetLevel: isNaN(level) ? 0 : level,
-        }
-      }
-      this.notifyChange(nextTargets)
-      return { targets: nextTargets }
-    })
+    const { targets } = this.state
+    if (!targets[shipMasterId]) return
+    const level = parseInt(value, 10)
+    const nextTargets = {
+      ...targets,
+      [shipMasterId]: {
+        ...targets[shipMasterId],
+        targetLevel: Number.isNaN(level) ? 0 : level,
+      },
+    }
+    this.setState({ targets: nextTargets })
+    this.notifyChange(nextTargets)
   }
 
   handleRemoveTarget = (shipMasterId) => {
-    this.setState(prev => {
-      const nextTargets = { ...prev.targets }
-      delete nextTargets[shipMasterId]
-      this.notifyChange(nextTargets)
-      return { targets: nextTargets }
-    })
+    const { targets } = this.state
+    if (!targets[shipMasterId]) return
+    const nextTargets = { ...targets }
+    delete nextTargets[shipMasterId]
+    this.setState({ targets: nextTargets })
+    this.notifyChange(nextTargets)
   }
 
   handleBatchLevelChange = (e) => {
@@ -200,47 +260,14 @@ class EquipShipSelector extends Component {
 
     if (!equipList || equipList.length === 0) {
       return (
-        <div className="bp6-text-muted" style={{ padding: 10, textAlign: 'center' }}>
+        <div className={Classes.TEXT_MUTED} style={{ padding: 10, textAlign: 'center' }}>
           {__('No equipment data. Try syncing in Settings.')}
         </div>
       )
     }
 
-    // Build available types from equipList
-    const availableTypesMap = {}
-    equipList.forEach(eq => {
-      const tId = eq.typeId || 999
-      if (!availableTypesMap[tId]) {
-        const typeInfo = $equipTypes[tId]
-        availableTypesMap[tId] = {
-          id: tId,
-          name: typeInfo ? typeInfo.api_name : 'Others',
-          iconId: eq.iconId,
-        }
-      }
-    })
-    const availableTypes = Object.values(availableTypesMap).sort((a, b) => a.id - b.id)
-
-    // Fuse search
-    let filtered = equipList
-    if (search) {
-      const results = this.fuse.search(search)
-      filtered = results.map(r => r.item)
-    }
-
-    // Type filter
-    if (selectedTypeIds.size > 0) {
-      filtered = filtered.filter(eq => selectedTypeIds.has(eq.typeId || 999))
-    }
-
-    // Group by type
-    const groups = {}
-    filtered.forEach(eq => {
-      const typeId = eq.typeId || 999
-      if (!groups[typeId]) groups[typeId] = []
-      groups[typeId].push(eq)
-    })
-    const sortedTypeIds = Object.keys(groups).sort((a, b) => parseInt(a, 10) - parseInt(b, 10))
+    const availableTypes = this.getAvailableTypes(equipList, $equipTypes)
+    const { groups, sortedTypeIds } = this.getGroupedEquipment(equipList, search, selectedTypeIds)
 
     const selectedTargetList = Object.values(targets)
 
@@ -331,7 +358,7 @@ class EquipShipSelector extends Component {
                       <div style={{ fontSize: '0.75em', opacity: 0.5, marginRight: 4 }}>
                         {eq.ships.length}
                       </div>
-                      <span className={`bp6-icon bp6-icon-chevron-${isExpanded ? 'up' : 'down'}`} />
+                      <Icon icon={isExpanded ? 'chevron-up' : 'chevron-down'} />
                     </div>
                     <Collapse isOpen={isExpanded}>
                       <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
@@ -355,7 +382,7 @@ class EquipShipSelector extends Component {
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => this.handleCheckShip(
-                                  s.shipId, s.shipName, s.providerId, s.providerName, s.level
+                                  s.shipId, s.shipName, s.providerId, s.providerName
                                 )}
                                 style={{ flexShrink: 0 }}
                               />
@@ -393,7 +420,7 @@ class EquipShipSelector extends Component {
             </div>
           ))}
           {sortedTypeIds.length === 0 && (
-            <div className="bp6-text-muted" style={{ textAlign: 'center', padding: 20 }}>
+            <div className={Classes.TEXT_MUTED} style={{ textAlign: 'center', padding: 20 }}>
               {__('No equipment matches filter.')}
             </div>
           )}
@@ -441,7 +468,7 @@ class EquipShipSelector extends Component {
                   onRemove={() => this.handleRemoveTarget(t.shipMasterId)}
                   style={{ fontSize: '0.8em' }}
                 >
-                  {t.shipName} Lv.{t.provideLevel}→{t.targetLevel}
+                  {t.shipName} → Lv.{t.targetLevel}
                 </Tag>
               ))}
             </div>
@@ -453,11 +480,10 @@ class EquipShipSelector extends Component {
 }
 
 const mapStateToProps = createSelector(
-  [equipListSelector, $equipTypesSelector, $shipsSelector],
-  (equipList, $equipTypes, $ships) => ({
+  [equipListSelector, $equipTypesSelector],
+  (equipList, $equipTypes) => ({
     equipList,
     $equipTypes,
-    $ships,
   })
 )
 

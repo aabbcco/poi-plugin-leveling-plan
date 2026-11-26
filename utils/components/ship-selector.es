@@ -57,11 +57,12 @@ class ShipSelectorMenu extends Component {
 
   constructor(props) {
     super(props)
-    
+
     this.state = {
       query: '',
+      selectedTab: 'all',
     }
-    
+
     const fuseOptions = {
       keys: ['api_name', 'api_yomi'],
       shouldSort: true,
@@ -72,7 +73,7 @@ class ShipSelectorMenu extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.ships.length !== prevProps.ships.length) {
+    if (this.props.ships !== prevProps.ships) {
       this.fuse.setCollection(this.props.ships)
     }
   }
@@ -85,31 +86,63 @@ class ShipSelectorMenu extends Component {
     this.setState({ query: '' })
   }
 
+  handleTabChange = (selectedTab) => {
+    this.setState({ selectedTab })
+  }
+
   handleSelect = (shipId) => () => {
     this.props.onSelect(shipId)
   }
 
-  render() {
-    const { query } = this.state
+  renderShipList(type, rankMap) {
     const { ships, mode } = this.props
     const isMaster = mode === 'master'
+    const allowedStypes = type === 'all' ? null : (catMap[type] || [])
 
-    const filtered = query 
-      ? _.map(this.fuse.search(query), result => result.item.api_id)
-      : []
-
-    const getSortOrders = () => {
-      if (isMaster) {
-        return [
-          ship => query ? filtered.indexOf(ship.api_id) : 0,
+    const sortOrders = isMaster
+      ? [
+          ship => (rankMap ? rankMap.get(ship.api_id) : 0),
           ship => ship.api_name,
         ]
-      }
-      return [
-        ship => query ? filtered.indexOf(ship.api_id) : 0,
-        ship => -ship.api_lv,
-        ship => -ship.api_exp,
-      ]
+      : [
+          ship => (rankMap ? rankMap.get(ship.api_id) : 0),
+          ship => -ship.api_lv,
+          ship => -ship.api_exp,
+        ]
+
+    return (
+      <ShipList>
+        {_(ships)
+          .filter(ship => !allowedStypes || allowedStypes.includes(ship.api_stype))
+          .filter(ship => !rankMap || rankMap.has(ship.api_id))
+          .sortBy(sortOrders)
+          .map(ship => (
+            <ShipItem
+              key={ship.api_id}
+              onClick={this.handleSelect(ship.api_id)}
+              className={classnames(
+                Classes.POPOVER_DISMISS,
+                Classes.MENU_ITEM
+              )}
+            >
+              {!isMaster && <ShipLv>Lv.{ship.api_lv}</ShipLv>}
+              <ShipName>{ship.api_name}</ShipName>
+            </ShipItem>
+          ))
+          .value()}
+      </ShipList>
+    )
+  }
+
+  render() {
+    const { query, selectedTab } = this.state
+
+    let rankMap = null
+    if (query) {
+      rankMap = new Map()
+      this.fuse.search(query).forEach((result, idx) => {
+        rankMap.set(result.item.api_id, idx)
+      })
     }
 
     return (
@@ -128,39 +161,20 @@ class ShipSelectorMenu extends Component {
             </Button>
           }
         />
-        
-        <Tabs vertical id="ship-selection" renderActiveTabPanelOnly>
+
+        <Tabs
+          vertical
+          id="ship-selection"
+          selectedTabId={selectedTab}
+          onChange={this.handleTabChange}
+          renderActiveTabPanelOnly
+        >
           {searchOptions.map(({ name, value: type }) => (
             <Tab
               key={type}
               id={type}
               title={__(name)}
-              panel={
-                <ShipList>
-                  {_(ships)
-                    .filter(ship => 
-                      type === 'all' || (catMap[type] || []).includes(ship.api_stype)
-                    )
-                    .filter(ship => 
-                      !query || filtered.includes(ship.api_id)
-                    )
-                    .sortBy(getSortOrders())
-                    .map(ship => (
-                      <ShipItem
-                        key={ship.api_id}
-                        onClick={this.handleSelect(ship.api_id)}
-                        className={classnames(
-                          Classes.POPOVER_DISMISS,
-                          Classes.MENU_ITEM
-                        )}
-                      >
-                        {!isMaster && <ShipLv>Lv.{ship.api_lv}</ShipLv>}
-                        <ShipName>{ship.api_name}</ShipName>
-                      </ShipItem>
-                    ))
-                    .value()}
-                </ShipList>
-              }
+              panel={type === selectedTab ? this.renderShipList(type, rankMap) : null}
             />
           ))}
         </Tabs>

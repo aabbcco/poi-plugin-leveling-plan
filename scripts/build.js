@@ -19,6 +19,8 @@ const COPY_ITEMS = [
   { src: 'services', type: 'dir', required: true },
   { src: 'i18n', type: 'dir', required: true },
   { src: 'assets', type: 'dir', required: true },
+  { src: 'README.md', required: false },
+  { src: 'LICENSE', required: false },
   { src: 'package.json', required: true },
 ]
 
@@ -125,9 +127,13 @@ async function build() {
       version: pkg.version,
       description: pkg.description,
       main: pkg.main,
+      keywords: pkg.keywords,
+      homepage: pkg.homepage,
+      bugs: pkg.bugs,
       author: pkg.author,
       license: pkg.license,
       repository: pkg.repository,
+      publishConfig: pkg.publishConfig,
       peerDependencies: pkg.peerDependencies,
       poiPlugin: pkg.poiPlugin,
     }

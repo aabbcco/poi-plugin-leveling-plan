@@ -8,7 +8,7 @@ import _ from 'lodash'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
 
-export const RemodelCostDisplay = ({ cost, resources, useitems }) => {
+export const RemodelCostDisplay = React.memo(({ cost, resources, useitems }) => {
   if (!cost || (cost.ammo === 0 && cost.steel === 0 && Object.keys(cost.consumable).length === 0)) {
     return <span style={{ opacity: 0.5 }}>{__('No remodel required')}</span>
   }
@@ -58,13 +58,14 @@ export const RemodelCostDisplay = ({ cost, resources, useitems }) => {
       </span>
     </span>
   )
-}
+})
 
 // 单个计划卡片组件
-export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, resources, useitems }) => {
+export const PlanItem = React.memo(({ planDetail, onEdit, onDelete, onComplete, $ships, resources, useitems, kaisouMaterials }) => {
   if (!planDetail) return null
 
   const {
+    id,
     shipMasterId,
     shipName,
     startLv,
@@ -78,10 +79,8 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
     completed,
   } = planDetail
 
-  const fromLevel = startLv === undefined ? currentLv : startLv
-
-  const remodelCost = ($ships && shipMasterId && fromLevel && targetLv)
-    ? getShipRemodelCost(shipMasterId, fromLevel, targetLv, $ships)
+  const remodelCost = (!completed && $ships && shipMasterId && currentLv && targetLv)
+    ? getShipRemodelCost(shipMasterId, currentLv, targetLv, $ships, kaisouMaterials)
     : null
 
   return (
@@ -91,7 +90,7 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
           <div className="plan-item-title">
             <span className="ship-name">{shipName}</span>
             <span className="level-info">
-              Lv.{startLv==undefined?currentLv:startLv} → Lv.{targetLv}
+              Lv.{startLv === undefined ? currentLv : startLv} → Lv.{targetLv}
             </span>
             {completed && (
               <span className="completed-badge">{__('Completed')}</span>
@@ -100,15 +99,15 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
           <div className="plan-item-actions">
             {!completed && (
               <>
-                <Button bsSize="xsmall" onClick={onEdit}>
+                <Button bsSize="xsmall" onClick={() => onEdit(id)}>
                   {__('Edit')}
                 </Button>
-                <Button bsSize="xsmall" onClick={onComplete}>
+                <Button bsSize="xsmall" onClick={() => onComplete(id)}>
                   {__('Complete')}
                 </Button>
               </>
             )}
-            <Button bsSize="xsmall" bsStyle="danger" onClick={onDelete}>
+            <Button bsSize="xsmall" bsStyle="danger" onClick={() => onDelete(id)}>
               {__('Delete')}
             </Button>
           </div>
@@ -162,7 +161,7 @@ export const PlanItem = ({ planDetail, onEdit, onDelete, onComplete, $ships, res
       </Panel.Body>
     </Panel>
   )
-}
+})
 
 const FARMING_COL_STYLE = {
   lv: { width: 40, textAlign: 'right', paddingRight: 8, flexShrink: 0 },
@@ -218,10 +217,11 @@ const FarmingDivider = () => (
 )
 
 // 养殖计划卡片组件
-export const FarmingPlanItem = ({ planDetail, onEdit, onDelete }) => {
+export const FarmingPlanItem = React.memo(({ planDetail, onEdit, onDelete }) => {
   if (!planDetail || planDetail.type !== 'farming') return null
 
   const {
+    id,
     displayTitle,
     targets,
   } = planDetail
@@ -240,8 +240,8 @@ export const FarmingPlanItem = ({ planDetail, onEdit, onDelete }) => {
             </span>
           </div>
           <div className="plan-item-actions">
-            <Button bsSize="xsmall" onClick={onEdit}>{__('Edit')}</Button>
-            <Button bsSize="xsmall" bsStyle="danger" onClick={onDelete}>{__('Delete')}</Button>
+            <Button bsSize="xsmall" onClick={() => onEdit(id)}>{__('Edit')}</Button>
+            <Button bsSize="xsmall" bsStyle="danger" onClick={() => onDelete(id)}>{__('Delete')}</Button>
           </div>
         </div>
       </Panel.Heading>
@@ -275,6 +275,6 @@ export const FarmingPlanItem = ({ planDetail, onEdit, onDelete }) => {
       </Panel.Body>
     </Panel>
   )
-}
+})
 
 export default PlanItem

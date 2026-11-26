@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-import _ from 'lodash'
 import { Nav, NavItem, Col, Grid, Button } from 'react-bootstrap'
 import { join } from 'path-extra'
 import PlanList from '../utils/components/plan-list'
@@ -74,10 +73,11 @@ export const LevelingPlanArea = connect(state => ({
     if (editingPlanId) {
       const updates = {
         maps: plan.maps,
-        notes: plan.notes,
       }
       if (plan.targets) {
         updates.targets = plan.targets
+        updates.shipMasterId = null
+        updates.targetLevel = null
       } else {
         updates.targets = null
         updates.targetLevel = plan.targetLevel

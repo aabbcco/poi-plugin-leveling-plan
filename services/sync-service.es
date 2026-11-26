@@ -1,6 +1,8 @@
 const PAGES_BASE = 'https://aabbcco.github.io/poi-equip-ships-data'
 const CONFIG_KEY = 'plugin.poi-plugin-leveling-plan'
 
+let inFlightMetaPromise = null
+
 async function fetchJSON(url) {
   const resp = await fetch(url, {
     cache: 'no-cache',
@@ -10,10 +12,19 @@ async function fetchJSON(url) {
   return resp.json()
 }
 
+function fetchMeta() {
+  if (!inFlightMetaPromise) {
+    inFlightMetaPromise = fetchJSON(`${PAGES_BASE}/index.json`).finally(() => {
+      inFlightMetaPromise = null
+    })
+  }
+  return inFlightMetaPromise
+}
+
 async function doSync({ metaSuffix, dataSuffix, dataFile, metaFields, compareFields }) {
   const metaKey = `${CONFIG_KEY}.${metaSuffix}`
   const dataKey = `${CONFIG_KEY}.${dataSuffix}`
-  const meta = await fetchJSON(`${PAGES_BASE}/index.json`)
+  const meta = await fetchMeta()
   if (!meta || !meta.updated_at) return null
   const cachedMeta = window.config.get(metaKey, {})
   if (compareFields.every(f => meta[f] === cachedMeta[f])) return { unchanged: true, meta }

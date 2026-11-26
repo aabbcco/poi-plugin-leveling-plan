@@ -58,21 +58,26 @@ async function createZip() {
       zlib: { level: 9 } // Maximum compression
     })
 
-    // Listen for archive events
-    output.on('close', () => {
-      const sizeInBytes = archive.pointer()
-      const sizeInKB = (sizeInBytes / 1024).toFixed(2)
-      console.log()
-      console.log('✅ ZIP package created successfully!\n')
-      console.log('📊 Package summary:')
-      console.log(`   File: ${zipFileName}`)
-      console.log(`   Size: ${sizeInKB} KB (${sizeInBytes} bytes)`)
-      console.log(`   Location: ${zipFilePath}`)
-      console.log()
-      console.log('💡 Installation:')
-      console.log('   1. Unzip the package')
-      console.log('   2. Copy dist/ contents to poi plugins directory:')
-      console.log('      cp -r dist/* /path/to/poi/node_modules/poi-plugin-leveling-plan/')
+    const archiveFinished = new Promise((resolve, reject) => {
+      output.on('close', () => {
+        const sizeInBytes = archive.pointer()
+        const sizeInKB = (sizeInBytes / 1024).toFixed(2)
+        console.log()
+        console.log('✅ ZIP package created successfully!\n')
+        console.log('📊 Package summary:')
+        console.log(`   File: ${zipFileName}`)
+        console.log(`   Size: ${sizeInKB} KB (${sizeInBytes} bytes)`)
+        console.log(`   Location: ${zipFilePath}`)
+        console.log()
+        console.log('💡 Installation:')
+        console.log('   1. Unzip the package')
+        console.log('   2. Copy dist/ contents to poi plugins directory:')
+        console.log('      cp -r dist/* /path/to/poi/node_modules/poi-plugin-leveling-plan/')
+        resolve()
+      })
+
+      output.on('error', reject)
+      archive.on('error', reject)
     })
 
     archive.on('warning', (err) => {
@@ -81,10 +86,6 @@ async function createZip() {
       } else {
         throw err
       }
-    })
-
-    archive.on('error', (err) => {
-      throw err
     })
 
     // Pipe archive data to file
@@ -139,8 +140,9 @@ For more information, visit: https://github.com/poooi/poi
 
     archive.append(installReadme, { name: 'README.txt' })
 
-    // Finalize the archive
+    // Finalize the archive and wait for output stream to close
     await archive.finalize()
+    await archiveFinished
 
   } catch (error) {
     console.error('❌ Failed to create ZIP:', error.message)

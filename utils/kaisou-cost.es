@@ -3,14 +3,8 @@ import { MAX_LEVEL } from './constants'
 import kaisouMaterials from '../assets/kaisou_materials.json'
 
 const KAISOU_ITEM_ID = {
-  drawing: 58,
-  catapult: 65,
-  report: 78,
   devkit: 3,
   buildkit: 2,
-  aviation: 77,
-  hokoheso: 75,
-  arms: 94,
 }
 
 export const RESOURCE_INDEX = {
@@ -48,31 +42,16 @@ export const addCost = (a, b) => {
   }
 }
 
-export const multiplyCost = (cost, multiplier) => {
-  const m = Number(multiplier || 0)
-  if (m <= 0) return emptyCost()
-
-  const multiplyMap = map => {
-    const result = {}
-    Object.keys(map).forEach(key => {
-      result[key] = map[key] * m
-    })
-    return result
+export const getShipMaterials = (shipMasterId, remoteMaterials = undefined) => {
+  if (remoteMaterials && remoteMaterials[String(shipMasterId)]) {
+    return remoteMaterials[String(shipMasterId)]
   }
-
-  return {
-    ammo: (cost.ammo || 0) * m,
-    steel: (cost.steel || 0) * m,
-    consumable: multiplyMap(cost.consumable || {}),
-    equipment: multiplyMap(cost.equipment || {}),
+  if (remoteMaterials === undefined) {
+    try {
+      const remote = window.config.get('plugin.poi-plugin-leveling-plan.kaisouMaterials', null)
+      if (remote && remote[String(shipMasterId)]) return remote[String(shipMasterId)]
+    } catch (e) { /* fall through */ }
   }
-}
-
-export const getShipMaterials = shipMasterId => {
-  try {
-    const remote = window.config.get('plugin.poi-plugin-leveling-plan.kaisouMaterials', null)
-    if (remote && remote[String(shipMasterId)]) return remote[String(shipMasterId)]
-  } catch (e) { /* fall through */ }
   return kaisouMaterials[String(shipMasterId)] || null
 }
 
@@ -100,11 +79,12 @@ export const parseShipMaterials = materialsData => {
 
 // 直接从当前舰船往后遍历，不需要往前找起点
 export const getRemodelChainForShip = (shipMasterId, $ships) => {
-  if (!$ships || !$ships[shipMasterId]) return [shipMasterId]
+  const startId = +shipMasterId
+  if (!$ships || !$ships[startId]) return [startId]
 
-  const chain = [shipMasterId]
-  const visited = new Set([shipMasterId])
-  let current = shipMasterId
+  const chain = [startId]
+  const visited = new Set([startId])
+  let current = startId
   let iterations = 0
   const MAX_ITERATIONS = 20 // 防止无限循环
 
@@ -123,11 +103,12 @@ export const getRemodelChainForShip = (shipMasterId, $ships) => {
 
 // 直接往后遍历获取改造等级
 export const getRemodelLevelsForShip = (shipMasterId, $ships) => {
-  if (!$ships || !$ships[shipMasterId]) return []
+  const startId = +shipMasterId
+  if (!$ships || !$ships[startId]) return []
 
-  const levels = []
-  const visited = new Set()
-  let current = shipMasterId
+  const levelSet = new Set()
+  const visited = new Set([startId])
+  let current = startId
   let iterations = 0
   const MAX_ITERATIONS = 20 // 防止无限循环
 
@@ -135,35 +116,37 @@ export const getRemodelLevelsForShip = (shipMasterId, $ships) => {
     iterations++
 
     const nextId = +($ships[current]?.api_aftershipid || 0)
+    const nextLv = +($ships[current]?.api_afterlv || 0)
     if (nextId <= 0 || visited.has(nextId)) {
-      const lastLv = +($ships[current]?.api_afterlv || 0)
-      if (lastLv > 0 && lastLv < 200) {
-        levels.push(lastLv)
+      if (nextId <= 0 && nextLv > 0 && nextLv < 200) {
+        levelSet.add(nextLv)
       }
       break
     }
-    visited.add(nextId)
 
-    const nextLv = +($ships[current]?.api_afterlv || 0)
     if (nextLv > 0 && nextLv < 200) {
-      levels.push(nextLv)
+      levelSet.add(nextLv)
     }
 
+    visited.add(nextId)
     current = nextId
   }
 
-  if (levels.length === 0) return []
+  if (levelSet.size === 0) return []
 
-  levels.sort((a, b) => a - b)
+  const levels = Array.from(levelSet).sort((a, b) => a - b)
   const lastLv = levels[levels.length - 1]
 
   // 确保 MAX_LEVEL 是有效值
   const maxLvl = typeof MAX_LEVEL === 'number' && MAX_LEVEL > 0 ? MAX_LEVEL : 100
 
-  if (lastLv < 100) {
-    return [...levels, 99, maxLvl]
+  if (lastLv < 100 && !levelSet.has(99)) {
+    levels.push(99)
   }
-  return [...levels, maxLvl]
+  if (!levelSet.has(maxLvl)) {
+    levels.push(maxLvl)
+  }
+  return levels
 }
 
 /**
@@ -194,47 +177,75 @@ export const buildRemodelIndex = ($ships) => {
     chains[id] = getRemodelChainForShip(id, $ships)
   })
 
+  const covered = new Set()
+
   Object.keys($ships).forEach(id => {
     if (parentMap[id] === undefined) {
       uniqueIds.push(id)
+      chains[id].forEach(memberId => covered.add(String(memberId)))
     }
+  })
+
+  // 处理无入口的纯循环改造链（如宗谷：699 → 645 → 650 → 699）
+  Object.keys($ships).forEach(id => {
+    if (covered.has(String(id))) return
+    const chain = chains[id] || [Number(id)]
+    const canonicalId = String(Math.min(...chain))
+    uniqueIds.push(canonicalId)
+    chain.forEach(memberId => covered.add(String(memberId)))
   })
 
   return { parentMap, chains, uniqueIds }
 }
 
-export const countRemodelNodesInRange = (shipMasterId, fromLevel, toLevel, $ships) => {
-  if (fromLevel >= toLevel) return 0
-
-  const levels = getRemodelLevelsForShip(shipMasterId, $ships)
-  if (levels.length === 0) return 0
-
-  return levels.filter(lv => lv > fromLevel && lv <= toLevel).length
-}
-
-export const getShipRemodelCost = (shipMasterId, fromLevel, toLevel, $ships) => {
-  if (!shipMasterId || fromLevel >= toLevel) return emptyCost()
+export const getShipRemodelDetail = (shipMasterId, currentLv, targetLv, $ships, remoteMaterials = undefined) => {
+  if (!shipMasterId || currentLv >= targetLv) {
+    return { steps: [], totalCost: emptyCost() }
+  }
 
   const chain = getRemodelChainForShip(shipMasterId, $ships)
-  if (chain.length < 2) return emptyCost()
+  if (chain.length < 2) {
+    return { steps: [], totalCost: emptyCost() }
+  }
 
+  // 检测链尾是否存在可逆/循环改造（如甲↔乙或三形态循环切换）
+  const lastNext = +($ships[chain[chain.length - 1]]?.api_aftershipid || 0)
+  const cycleStartIdx = lastNext > 0 ? chain.indexOf(lastNext) : -1
+
+  const steps = []
   let totalCost = emptyCost()
 
-  // 沿改造链向后遍历相邻对 [chain[i] → chain[i+1]]
+  // 沿当前形态向后遍历改造链 [chain[i] → chain[i+1]]
   // 改造等级取改造前形态的 api_afterlv,消耗材料也按改造前形态计
   for (let i = 0; i < chain.length - 1; i++) {
-    const shipIdBeforeRemodel = chain[i]
-    const level = +($ships[shipIdBeforeRemodel]?.api_afterlv || 0)
-    if (level <= 0 || level >= 200) continue
-    if (level <= fromLevel || level > toLevel) continue
+    const fromId = chain[i]
+    const toId = chain[i + 1]
+    const level = +($ships[fromId]?.api_afterlv || 0)
+    if (level <= 0 || level >= 200 || level > targetLv) continue
 
-    const materials = getShipMaterials(shipIdBeforeRemodel)
+    const isPassedLevel = level <= currentLv
+    const isReversibleStep = cycleStartIdx !== -1 && i >= cycleStartIdx
+    if (isPassedLevel && isReversibleStep) continue
+
+    steps.push({
+      level,
+      fromId,
+      toId,
+      toName: $ships[toId]?.api_name || `Ship#${toId}`,
+      isDelayed: isPassedLevel,
+    })
+
+    const materials = getShipMaterials(fromId, remoteMaterials)
     if (materials) {
       totalCost = addCost(totalCost, parseShipMaterials(materials))
     }
   }
 
-  return totalCost
+  return { steps, totalCost }
+}
+
+export const getShipRemodelCost = (shipMasterId, fromLevel, toLevel, $ships, remoteMaterials = undefined) => {
+  return getShipRemodelDetail(shipMasterId, fromLevel, toLevel, $ships, remoteMaterials).totalCost
 }
 
 export const calcShortage = (required, available) => {
@@ -284,19 +295,4 @@ export const calcAllShortages = (totalCost, resources, useitems, equips) => {
   })
 
   return shortages
-}
-
-export const getTotalShortageCount = shortages => {
-  let count = 0
-
-  if (shortages.ammo?.gap > 0) count++
-  if (shortages.steel?.gap > 0) count++
-  if (shortages.devmat?.gap > 0) count++
-  if (shortages.buildkit?.gap > 0) count++
-
-  Object.values(shortages.consumable || {}).forEach(s => {
-    if (s.gap > 0) count++
-  })
-
-  return count
 }

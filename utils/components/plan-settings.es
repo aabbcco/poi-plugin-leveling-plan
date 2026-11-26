@@ -26,10 +26,12 @@ const MapExperienceOverview = ({ personalStats }) => {
         </thead>
         <tbody>
           {mapIds.map(mapId => {
+            const personalStat = personalStats[mapId]
             const mapExpData = getMapExp(mapId, personalStats, 30)
             const presetExp = EXP_BY_POI_DB[mapId] || 0
             const isPersonal = mapExpData.source === 'personal'
-            const hasPersonalData = mapExpData.count > 0
+            const hasPersonalData = mapExpData.count > 0 && personalStat && typeof personalStat.average === 'number'
+            const personalExp = hasPersonalData ? Math.floor(personalStat.average) : null
             const samplesInsufficient = hasPersonalData && !isPersonal
 
             return (
@@ -37,7 +39,7 @@ const MapExperienceOverview = ({ personalStats }) => {
                 <td className="map-id">{formatMapName(mapId)}</td>
                 <td className="preset-exp">{presetExp}</td>
                 <td className={`personal-exp ${isPersonal ? 'active' : ''}`}>
-                  {hasPersonalData ? mapExpData.exp : __('No personal data')}
+                  {hasPersonalData ? personalExp : __('No personal data')}
                 </td>
                 <td className={`sample-count ${samplesInsufficient ? 'insufficient' : ''}`}>
                   {mapExpData.count}

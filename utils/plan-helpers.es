@@ -44,6 +44,12 @@ export const validatePlan = (plan, ship = null) => {
       errors.push(`targetLevel must be between 1 and ${MAX_LEVEL}`)
     }
 
+    if (!isFarming && plan.startLevel !== undefined && plan.startLevel !== null) {
+      if (!Number.isInteger(plan.startLevel) || plan.startLevel < 1 || plan.startLevel > MAX_LEVEL) {
+        errors.push(`startLevel must be between 1 and ${MAX_LEVEL}`)
+      }
+    }
+
     if (!isFarming && ship && plan.targetLevel <= ship.api_lv) {
       errors.push('targetLevel must be greater than current level')
     }
@@ -90,7 +96,10 @@ export const calcPlanDetail = (plan, ship, $ship, personalStats = {}, settings =
   try {
     // 基础信息
     const currentLv = ship.api_lv
-    const startLv = plan.startLevel==undefined?ship.api_lv:plan.startLevel
+    const parsedStartLv = Number(plan.startLevel)
+    const startLv = (plan.startLevel !== undefined && plan.startLevel !== null && plan.startLevel !== '' && Number.isFinite(parsedStartLv))
+      ? parsedStartLv
+      : ship.api_lv
     const currentExp = ship.api_exp[0] // 累计经验
     const targetLv = plan.targetLevel
 
@@ -100,8 +109,8 @@ export const calcPlanDetail = (plan, ship, $ship, personalStats = {}, settings =
     // 计算进度百分比
     const targetTotalExp = expTable[targetLv] || 0
     const startExp = expTable[startLv] || 0
-    const progress = targetTotalExp > startExp 
-      ? Math.min(100.0, 100.0*((currentExp - startExp) / (targetTotalExp - startExp)))
+    const progress = targetTotalExp > startExp
+      ? Math.max(0, Math.min(100.0, 100.0 * ((currentExp - startExp) / (targetTotalExp - startExp))))
       : 100.0
 
     // 计算每个海图的详情
@@ -124,7 +133,7 @@ export const calcPlanDetail = (plan, ship, $ship, personalStats = {}, settings =
     return {
       id: plan.id,
       shipId: plan.shipId,
-      shipMasterId: plan.shipMasterId,
+      shipMasterId: ship.api_ship_id || plan.shipMasterId,
       shipName: $ship.api_name || '',
       startLv,
       currentLv,
@@ -132,9 +141,8 @@ export const calcPlanDetail = (plan, ship, $ship, personalStats = {}, settings =
       targetLv,
       targetTotalExp,
       requiredExp,
-      progress: progress,
+      progress,
       mapDetails,
-      notes: plan.notes || '',
       completed: plan.completed || false,
       completedAt: plan.completedAt || null,
       createdAt: plan.createdAt,
@@ -177,18 +185,19 @@ export const formatMapName = (mapId) => {
  * 创建新计划对象
  * @param {number} shipId - 舰娘实例ID
  * @param {number} shipMasterId - 舰娘图鉴ID
+ * @param {number} startLevel - 起始等级
  * @param {number} targetLevel - 目标等级
  * @param {array} maps - 海图ID数组
- * @param {string} notes - 备注
+ * @param {string} type - 计划类型 ('normal' | 'farming')
+ * @param {array|null} targets - 多目标养殖列表
  * @returns {object} 新计划对象
  */
-export const createPlan = (shipId, shipMasterId, startLevel, targetLevel, maps, notes = '', type = 'normal', targets = null) => {
+export const createPlan = (shipId, shipMasterId, startLevel, targetLevel, maps, type = 'normal', targets = null) => {
   const now = Date.now()
   
   const base = {
     id: generatePlanId(),
     maps,
-    notes,
     type,
     createdAt: now,
     updatedAt: now,
@@ -215,27 +224,13 @@ export const createPlan = (shipId, shipMasterId, startLevel, targetLevel, maps, 
 /**
  * 更新计划对象
  * @param {object} plan - 原计划对象
- * @param {object} updates - 更新的字段 { targetLevel, maps, notes }
+ * @param {object} updates - 更新的字段
  * @returns {object} 更新后的计划对象
  */
 export const updatePlan = (plan, updates) => {
   return {
     ...plan,
     ...updates,
-    updatedAt: Date.now(),
-  }
-}
-
-/**
- * 完成计划
- * @param {object} plan - 计划对象
- * @returns {object} 完成后的计划对象
- */
-export const completePlan = (plan) => {
-  return {
-    ...plan,
-    completed: true,
-    completedAt: Date.now(),
     updatedAt: Date.now(),
   }
 }

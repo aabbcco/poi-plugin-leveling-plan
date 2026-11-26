@@ -3,9 +3,17 @@ import { Nav, NavItem } from 'react-bootstrap'
 import { connect } from 'react-redux'
 import _ from 'lodash'
 import PlanItem from './plan-item'
-import { allPlanDetailsSelector, activePlanDetailsSelector, completedPlanDetailsSelector, $shipsSelector } from '../../utils/selectors'
+import {
+  allPlanDetailsSelector,
+  activePlanDetailsSelector,
+  completedPlanDetailsSelector,
+  $shipsSelector,
+  kaisouMaterialsSelector,
+} from '../../utils/selectors'
 
 const { __ } = window.i18n['poi-plugin-leveling-plan']
+const EMPTY_ARRAY = []
+const EMPTY_OBJECT = {}
 
 // 计划列表组件
 class PlanList extends Component {
@@ -22,7 +30,7 @@ class PlanList extends Component {
 
   render() {
     const { activeTab } = this.state
-    const { allPlans, activePlans, completedPlans, onEdit, onDelete, onComplete, $ships, resources, useitems } = this.props
+    const { allPlans, activePlans, completedPlans, onEdit, onDelete, onComplete, $ships, resources, useitems, kaisouMaterials } = this.props
 
     // 根据当前标签页选择要显示的计划
     let displayPlans = []
@@ -60,12 +68,13 @@ class PlanList extends Component {
               <PlanItem
                 key={plan.id}
                 planDetail={plan}
-                onEdit={() => onEdit(plan.id)}
-                onDelete={() => onDelete(plan.id)}
-                onComplete={() => onComplete(plan.id)}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onComplete={onComplete}
                 $ships={$ships}
                 resources={resources}
                 useitems={useitems}
+                kaisouMaterials={kaisouMaterials}
               />
             ))
           )}
@@ -82,8 +91,9 @@ const mapStateToProps = (state) => {
     activePlans: activePlanDetailsSelector(state),
     completedPlans: completedPlanDetailsSelector(state),
     $ships: $shipsSelector(state),
-    resources: _.get(state, 'info.resources', []),
-    useitems: _.get(state, 'info.useitems', {}),
+    resources: _.get(state, 'info.resources', EMPTY_ARRAY),
+    useitems: _.get(state, 'info.useitems', EMPTY_OBJECT),
+    kaisouMaterials: kaisouMaterialsSelector(state),
   }
 }
 

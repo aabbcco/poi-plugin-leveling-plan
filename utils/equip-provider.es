@@ -1,26 +1,9 @@
 import initialEquipData from '../assets/initial_equip_ships.json'
+import { buildRemodelIndex } from './kaisou-cost'
 
 let cachedFarmingMap = null
 let cached$Ships = null
-let cachedDataVersion = null
-
-const getDataVersion = () => {
-  try {
-    const meta = window.config.get('plugin.poi-plugin-leveling-plan.equipSyncMeta', {})
-    return meta.updated_at || 'bundled'
-  } catch (e) {
-    return 'bundled'
-  }
-}
-const findRoot = (id, parentMap) => {
-  let curr = id
-  let steps = 0
-  while (parentMap[curr] && steps < 20) {
-    curr = parentMap[curr]
-    steps++
-  }
-  return curr
-}
+let cachedActiveData = null
 
 export function loadSyncedData() {
   try {
@@ -34,25 +17,34 @@ export function loadSyncedData() {
   return null
 }
 
-export function getFarmingMap($ships) {
+export function getFarmingMap($ships, syncedData = undefined) {
   if (!$ships || Object.keys($ships).length === 0) return {}
 
-  if (cachedFarmingMap && cached$Ships === $ships && cachedDataVersion === getDataVersion()) return cachedFarmingMap
+  const resolvedSynced = syncedData !== undefined
+    ? (syncedData && typeof syncedData === 'object' && Object.keys(syncedData).length > 0 ? syncedData : null)
+    : loadSyncedData()
+  const activeData = resolvedSynced || initialEquipData
 
-  const parentMap = {}
+  if (cachedFarmingMap && cached$Ships === $ships && cachedActiveData === activeData) {
+    return cachedFarmingMap
+  }
+
+  const { chains, uniqueIds } = buildRemodelIndex($ships)
+  const rootMap = {}
+  uniqueIds.forEach(uid => {
+    const rootNum = Number(uid)
+    ;(chains[uid] || [rootNum]).forEach(memberId => {
+      rootMap[memberId] = rootNum
+    })
+  })
+
   const nameToId = {}
-
   Object.values($ships).forEach(s => {
-    const afterId = parseInt(s.api_aftershipid, 10)
-    if (afterId > 0 && !parentMap[afterId]) {
-      parentMap[afterId] = s.api_id
-    }
     if (s.api_name) {
       nameToId[s.api_name] = s.api_id
     }
   })
 
-  const activeData = loadSyncedData() || initialEquipData
   const map = {}
 
   Object.entries(activeData).forEach(([eqIdStr, providers]) => {
@@ -63,7 +55,7 @@ export function getFarmingMap($ships) {
       const shipId = nameToId[name]
       if (!shipId) return
 
-      const rootId = findRoot(shipId, parentMap)
+      const rootId = rootMap[shipId] !== undefined ? rootMap[shipId] : shipId
 
       if (!map[rootId]) {
         map[rootId] = { baseId: rootId, provides: [] }
@@ -84,7 +76,7 @@ export function getFarmingMap($ships) {
 
   cachedFarmingMap = map
   cached$Ships = $ships
-  cachedDataVersion = getDataVersion()
+  cachedActiveData = activeData
   return map
 }
 
